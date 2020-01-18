@@ -18,8 +18,7 @@ open class MIODB {
     public var schema:String?
     public var connectionString:String?
     
-    public convenience init(connection:MDBConnection){
-         self.init()
+    public init(connection:MDBConnection){
          
          self.host = connection.host
          self.port = connection.port

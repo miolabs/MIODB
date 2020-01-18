@@ -8,7 +8,7 @@
 
 import CoreFoundation
 
-open class MDB: NSObject {
+open class MIODB: NSObject {
 
     public var host:String?
     public var port:Int32?

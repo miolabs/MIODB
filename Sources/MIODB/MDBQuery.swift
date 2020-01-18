@@ -10,7 +10,7 @@ import Foundation
 
 public class MDBQuery {
 
-    var db:MDB!
+    var db:MIODB!
     var items = [String]()
     var orderBy = [String]()
         

@@ -6,9 +6,9 @@
 //  Copyright © 2019 Javier Segura Perez. All rights reserved.
 //
 
-import CoreFoundation
+import Foundation
 
-open class MIODB: NSObject {
+open class MIODB {
 
     public var host:String?
     public var port:Int32?

@@ -14,7 +14,7 @@ public class MDBQuery {
     var items = [String]()
     var orderBy = [String]()
         
-    public convenience init(db:MDB){
+    public convenience init(db:MIODB){
         self.init()
         self.db = db
     }

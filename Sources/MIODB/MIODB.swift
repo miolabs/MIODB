@@ -15,7 +15,7 @@ open class MIODB {
     public var user:String?
     public var password:String?
     public var database:String?
-    public var schema:String?
+    public var scheme:String?
     public var connectionString:String?
     
     public init(connection:MDBConnection){

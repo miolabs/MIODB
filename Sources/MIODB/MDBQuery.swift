@@ -18,6 +18,7 @@ public class MDBQuery {
     var db:MIODB!
     var items = [String]()
     var orderBy = [String]()
+    var extras = [String]()
         
     public convenience init(db:MIODB){
         self.init()
@@ -141,4 +142,10 @@ public class MDBQuery {
             return desc(field)
         }
     }
+    
+    public func limit(_ rows:Int) -> MDBQuery {
+        let rowsString = String(rows)
+        extras.append("LIMIT \(rowsString)")
+        return self
+    }    
 }

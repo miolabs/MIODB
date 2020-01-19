@@ -16,6 +16,8 @@ public class MDBQuery {
     }
     
     var db:MIODB!
+    var query:String = ""
+    
     var items = [String]()
     var orderBy = [String]()
     var extras = [String]()
@@ -43,6 +45,26 @@ public class MDBQuery {
     public func fromTables(_ tables:String) -> MDBQuery {
         items.append("FROM \(tables)")
         return self
+    }
+
+    let spaceSeparator = " "
+    let commaSeparator = ", "
+    var nextSeparator = ""
+    
+    public func insertInto(_ table:String) -> MDBQuery {
+        query.append("INSERT INTO \(table) (")
+        nextSeparator = spaceSeparator
+        return self
+    }
+        
+    public func field(_ field:String) -> MDBQuery {
+        query.append("\(nextSeparator)'\(field)'")
+        nextSeparator = commaSeparator
+        return self
+    }
+    
+    func insert() {
+        _ = db.executeQueryString(query)
     }
     
     public func whereValues() -> MDBQuery {
@@ -147,5 +169,5 @@ public class MDBQuery {
         let rowsString = String(rows)
         extras.append("LIMIT \(rowsString)")
         return self
-    }    
+    }
 }

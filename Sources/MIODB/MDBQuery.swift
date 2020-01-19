@@ -55,8 +55,8 @@ public class MDBQuery {
     }
         
     public func field(_ field:String, value:String) -> MDBQuery {
-        insertFields.append("'\(field)'")
-        insertValues.append("'\(value)'")
+        insertFields.append("\"\(field)\"")
+        insertValues.append("\"\(value)\"")
         return self
     }
     

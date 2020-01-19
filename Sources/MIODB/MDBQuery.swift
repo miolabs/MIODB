@@ -16,7 +16,9 @@ public class MDBQuery {
     }
     
     var db:MIODB!
-    var query:String = ""
+    var insertTable:String = ""
+    var insertFields = [String]()
+    var insertValues = [String]()
     
     var items = [String]()
     var orderBy = [String]()
@@ -46,25 +48,23 @@ public class MDBQuery {
         items.append("FROM \(tables)")
         return self
     }
-
-    let spaceSeparator = " "
-    let commaSeparator = ", "
-    var nextSeparator = ""
     
     public func insertInto(_ table:String) -> MDBQuery {
-        query.append("INSERT INTO \(table) (")
-        nextSeparator = spaceSeparator
+        insertTable = table
         return self
     }
         
-    public func field(_ field:String) -> MDBQuery {
-        query.append("\(nextSeparator)'\(field)'")
-        nextSeparator = commaSeparator
+    public func field(_ field:String, value:String) -> MDBQuery {
+        insertFields.append(field)
+        insertValues.append(value)
         return self
     }
     
     func insert() {
-        _ = db.executeQueryString(query)
+        var queryString = "INSERT INTO \(insertTable)"
+        queryString += " (" + insertFields.joined(separator: ",") + ")"
+        queryString += " VALUES (" + insertValues.joined(separator: ",") + ")"
+        _ = db.executeQueryString(queryString)
     }
     
     public func whereValues() -> MDBQuery {

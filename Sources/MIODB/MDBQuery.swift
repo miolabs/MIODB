@@ -60,7 +60,7 @@ public class MDBQuery {
         return self
     }
     
-    func insert() {
+    public func insert() {
         var queryString = "INSERT INTO \(insertTable)"
         queryString += " (" + insertFields.joined(separator: ",") + ")"
         queryString += " VALUES (" + insertValues.joined(separator: ",") + ")"

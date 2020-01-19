@@ -15,10 +15,23 @@ public class MDBQuery {
         case Desc
     }
     
+    public enum StamentType {
+        case select
+        case insert
+        case update
+        case delete
+    }
+
+    
     var db:MIODB!
+    var currentStatment = StamentType.select
+    
     var insertTable:String = ""
     var insertFields = [String]()
     var insertValues = [String]()
+    
+    var updateTable:String = ""
+    var updateValues = [String]()
     
     var items = [String]()
     var orderBy = [String]()
@@ -51,6 +64,7 @@ public class MDBQuery {
     
     public func insertInto(_ table:String) -> MDBQuery {
         insertTable = table
+        currentStatment = .insert
         return self
     }
         
@@ -58,8 +72,19 @@ public class MDBQuery {
         if value == nil {
             return self
         }
-        insertFields.append("\"\(field)\"")
-        insertValues.append("'\(value!)'")
+        
+        switch currentStatment {
+        case .insert:
+            insertFields.append("\"\(field)\"")
+            insertValues.append("'\(value!)'")
+
+        case .update:
+            updateValues.append("\"\(field)\"=\'\(value!)'")
+            
+        default:
+            print("Not implemented")
+        }
+                
         return self
     }
     
@@ -67,6 +92,19 @@ public class MDBQuery {
         var queryString = "INSERT INTO \(insertTable)"
         queryString += " (" + insertFields.joined(separator: ",") + ")"
         queryString += " VALUES (" + insertValues.joined(separator: ",") + ")"
+        _ = db.executeQueryString(queryString)
+    }
+    
+    public func updateTo(_ table:String) -> MDBQuery {
+        updateTable = table
+        currentStatment = .update
+        return self
+    }
+    
+    public func update() {
+        var queryString = "UPDATE \(updateTable) SET"
+        queryString += " " + updateValues.joined(separator: ",")
+        queryString += " " + items.joined(separator: " ")
         _ = db.executeQueryString(queryString)
     }
     

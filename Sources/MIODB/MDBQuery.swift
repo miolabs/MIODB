@@ -54,9 +54,12 @@ public class MDBQuery {
         return self
     }
         
-    public func field(_ field:String, value:String) -> MDBQuery {
+    public func field(_ field:String, value:String?) -> MDBQuery {
+        if value == nil {
+            return self
+        }
         insertFields.append("\"\(field)\"")
-        insertValues.append("'\(value)'")
+        insertValues.append("'\(value!)'")
         return self
     }
     

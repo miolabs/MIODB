@@ -30,7 +30,7 @@ open class MIODB {
     open func connect(){
     }
 
-    open func connect(schema:String?){
+    open func connect(scheme:String?){
     }
     
     open func disconnect(){
@@ -41,7 +41,7 @@ open class MIODB {
         return []
     }
     
-    open func changeSchema(_ schema:String?){
+    open func changeScheme(_ scheme:String?){
     }
     
     // Build query methods

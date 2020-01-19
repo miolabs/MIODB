@@ -15,6 +15,6 @@ public struct MDBConnection {
     public var user:String?
     public var password:String?
     public var database:String?
-    public var schema:String?
+    public var scheme:String?
     
 }

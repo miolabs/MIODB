@@ -10,6 +10,11 @@ import Foundation
 
 public class MDBQuery {
 
+    public enum OrderType {
+        case Asc
+        case Desc
+    }
+    
     var db:MIODB!
     var items = [String]()
     var orderBy = [String]()
@@ -127,17 +132,13 @@ public class MDBQuery {
         return self
     }
     
-    public func order(field:String, typeString:String) -> MDBQuery{
-        switch typeString.lowercased() {
-        case "asc":
+    public func order(field:String, type:OrderType) -> MDBQuery{
+        switch type {
+        case .Asc:
             return asc(field)
         
-        case "desc":
+        case .Desc:
             return desc(field)
-        
-        default:
-            return self
         }
     }
-    
 }

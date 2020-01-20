@@ -108,6 +108,17 @@ public class MDBQuery {
         _ = db.executeQueryString(queryString)
     }
     
+    public func deleteFrom(_ table:String) -> MDBQuery {
+        items.append("DELETE FROM \(table)")
+        return self
+    }
+    
+    public func delete() {
+        var queryString = items.joined(separator: " ")
+        queryString += " " + orderBy.joined(separator: ",")
+        _ = db.executeQueryString(queryString)
+    }
+    
     public func whereValues() -> MDBQuery {
         items.append("WHERE")
         return self

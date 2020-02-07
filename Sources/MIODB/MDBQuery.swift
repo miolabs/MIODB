@@ -68,18 +68,27 @@ public class MDBQuery {
         return self
     }
         
-    public func field(_ field:String, value:String?) -> MDBQuery {
-        if value == nil {
-            return self
+    public func field(_ field:String, value:Any?) -> MDBQuery {
+        
+        var safeValue = value
+        if let stringValue = safeValue as? String {
+            safeValue = "'\(stringValue)'"
         }
         
         switch currentStatment {
         case .insert:
+            if value == nil {
+                return self
+            }
             insertFields.append("\"\(field)\"")
-            insertValues.append("'\(value!)'")
+            insertValues.append("\(safeValue!)")
 
         case .update:
-            updateValues.append("\"\(field)\"=\'\(value!)'")
+            if value == nil {
+                updateValues.append("\"\(field)\"=NULL")
+            } else {
+                updateValues.append("\"\(field)\"=\(safeValue!)")
+            }
             
         default:
             print("Not implemented")
@@ -157,7 +166,7 @@ public class MDBQuery {
         }
         else if value is Float {
             valueString = String(value as! Float)
-        }            
+        }
         
         items.append("\(field) = \(valueString)")
         return self

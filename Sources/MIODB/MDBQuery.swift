@@ -73,11 +73,13 @@ public class MDBQuery {
         var safeValue = value
         if let stringValue = safeValue as? String {
             safeValue = "'\(stringValue)'"
+        } else if value is NSNull {
+            safeValue = nil
         }
         
         switch currentStatment {
         case .insert:
-            if value == nil {
+            if safeValue == nil {
                 return self
             }
             insertFields.append("\"\(field)\"")

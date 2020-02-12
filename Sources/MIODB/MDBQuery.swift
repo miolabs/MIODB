@@ -57,6 +57,12 @@ public class MDBQuery {
         return self
     }
     
+    public func fromTable(_ table:String) -> MDBQuery {
+        items.append("FROM \"\(table)\"")
+        return self
+    }
+    
+    /// If you use this function, be responsible about quoting the table names
     public func fromTables(_ tables:String) -> MDBQuery {
         items.append("FROM \(tables)")
         return self
@@ -100,7 +106,7 @@ public class MDBQuery {
     }
     
     public func insert() {
-        var queryString = "INSERT INTO \(insertTable)"
+        var queryString = "INSERT INTO \"\(insertTable)\""
         queryString += " (" + insertFields.joined(separator: ",") + ")"
         queryString += " VALUES (" + insertValues.joined(separator: ",") + ")"
         _ = db.executeQueryString(queryString)
@@ -113,14 +119,14 @@ public class MDBQuery {
     }
     
     public func update() {
-        var queryString = "UPDATE \(updateTable) SET"
+        var queryString = "UPDATE \"\(updateTable)\" SET"
         queryString += " " + updateValues.joined(separator: ",")
         queryString += " " + items.joined(separator: " ")
         _ = db.executeQueryString(queryString)
     }
     
     public func deleteFrom(_ table:String) -> MDBQuery {
-        items.append("DELETE FROM \(table)")
+        items.append("DELETE FROM \"\(table)\"")
         return self
     }
     

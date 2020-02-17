@@ -37,7 +37,7 @@ open class MIODB {
         
     }
     
-    open func executeQueryString(_ query:String) -> [Any]{
+    open func executeQueryString(_ query:String) throws -> [Any]{
         return []
     }
     

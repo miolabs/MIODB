@@ -46,10 +46,10 @@ public class MDBQuery {
         items.append(item)
     }
     
-    public func execute() -> [Any]{
+    public func execute() throws -> [Any]{
         var queryString = items.joined(separator: " ")
         queryString += " " + orderBy.joined(separator: ",")
-        return db.executeQueryString(queryString)
+        return try db.executeQueryString(queryString)
     }
 
     public func selectFields(_ fields:String) -> MDBQuery {
@@ -105,11 +105,11 @@ public class MDBQuery {
         return self
     }
     
-    public func insert() {
+    public func insert() throws {
         var queryString = "INSERT INTO \"\(insertTable)\""
         queryString += " (" + insertFields.joined(separator: ",") + ")"
         queryString += " VALUES (" + insertValues.joined(separator: ",") + ")"
-        _ = db.executeQueryString(queryString)
+        _ = try db.executeQueryString(queryString)
     }
     
     public func updateTo(_ table:String) -> MDBQuery {
@@ -118,11 +118,11 @@ public class MDBQuery {
         return self
     }
     
-    public func update() {
+    public func update() throws {
         var queryString = "UPDATE \"\(updateTable)\" SET"
         queryString += " " + updateValues.joined(separator: ",")
         queryString += " " + items.joined(separator: " ")
-        _ = db.executeQueryString(queryString)
+        _ = try db.executeQueryString(queryString)
     }
     
     public func deleteFrom(_ table:String) -> MDBQuery {
@@ -130,10 +130,10 @@ public class MDBQuery {
         return self
     }
     
-    public func delete() {
+    public func delete() throws {
         var queryString = items.joined(separator: " ")
         queryString += " " + orderBy.joined(separator: ",")
-        _ = db.executeQueryString(queryString)
+        _ = try db.executeQueryString(queryString)
     }
     
     public func whereValues() -> MDBQuery {

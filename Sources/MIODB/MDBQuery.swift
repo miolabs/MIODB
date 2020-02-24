@@ -46,6 +46,7 @@ public class MDBQuery {
         items.append(item)
     }
     
+    // TODO: Return here [[String : Any]], so we don't have to make always a cast
     public func execute() throws -> [Any]{
         var queryString = items.joined(separator: " ")
         queryString += " " + orderBy.joined(separator: ",")

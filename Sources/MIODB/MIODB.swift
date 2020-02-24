@@ -15,7 +15,6 @@ open class MIODB {
     public var user:String?
     public var password:String?
     public var database:String?
-    public var scheme:String?
     public var connectionString:String?
     
     public init(connection:MDBConnection){
@@ -30,18 +29,12 @@ open class MIODB {
     open func connect(){
     }
 
-    open func connect(scheme:String?){
-    }
-    
     open func disconnect(){
         
     }
     
     open func executeQueryString(_ query:String) throws -> [Any]{
         return []
-    }
-    
-    open func changeScheme(_ scheme:String?){
     }
     
     // Build query methods

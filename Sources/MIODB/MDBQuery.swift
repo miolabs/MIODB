@@ -33,7 +33,7 @@ public class MDBQuery {
     var updateTable:String = ""
     var updateValues = [String]()
     
-    var items = [String]()
+    public var items = [String]()
     var orderBy = [String]()
     var extras = [String]()
         
@@ -79,7 +79,7 @@ public class MDBQuery {
         
         var safeValue = value
         if let stringValue = safeValue as? String {
-            safeValue = "'\(stringValue)'"
+            safeValue = "'\(stringValue.replacingOccurrences(of: "'", with: "''"))'"
         } else if value is NSNull {
             safeValue = nil
         }

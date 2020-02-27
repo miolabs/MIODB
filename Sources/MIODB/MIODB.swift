@@ -8,6 +8,22 @@
 
 import Foundation
 
+enum MIODBError: Error {
+    case cantBeginTransactionWhileInsideTransaction
+    case cantEndTransactionWhileNotInsideTransaction
+}
+
+extension MIODBError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .cantBeginTransactionWhileInsideTransaction:
+            return "[MIODBError] Can't begin transaction, another transaction is already in progress."
+        case .cantEndTransactionWhileNotInsideTransaction:
+            return "[MIODBError] Can't end transaction if a transaction is not in progress."
+        }
+    }
+}
+
 open class MIODB {
 
     public var host:String?
@@ -16,6 +32,9 @@ open class MIODB {
     public var password:String?
     public var database:String?
     public var connectionString:String?
+    public var isInsideTransaction : Bool = false
+    
+    var transactionQueryStrings : [String] = []
     
     public init(connection:MDBConnection){
          
@@ -46,5 +65,26 @@ open class MIODB {
     open func like(key:String, value:String) -> String {
         return "\(key) LIKE '%\(value)%'"
     }
+    
+    open func beginTransaction() throws {
+        if isInsideTransaction {
+            throw MIODBError.cantBeginTransactionWhileInsideTransaction
+        }
+        isInsideTransaction = true
+    }
 
+    open func commitTransaction() throws {
+        if isInsideTransaction == false {
+            throw MIODBError.cantEndTransactionWhileNotInsideTransaction
+        }
+        
+        isInsideTransaction = false
+        
+        _ = try executeQueryString(transactionQueryStrings.joined(separator: "; "))
+        transactionQueryStrings.removeAll()
+    }
+    
+    open func pushQueryString(_ query : String) {
+        transactionQueryStrings.append(query)
+    }
 }

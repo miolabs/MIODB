@@ -34,6 +34,7 @@ public class MDBQuery {
     var updateValues = [String]()
     
     public var items = [String]()
+    var useOrderBy = false
     var orderBy = [String]()
     var extras = [String]()
         
@@ -49,7 +50,9 @@ public class MDBQuery {
     // TODO: Return here [[String : Any]], so we don't have to make always a cast
     public func execute() throws -> [Any]{
         var queryString = items.joined(separator: " ")
-        queryString += " " + orderBy.joined(separator: ",")
+        if useOrderBy {
+            queryString += " ORDER BY " + orderBy.joined(separator: ",")
+        }
         return try db.executeQueryString(queryString)
     }
 
@@ -162,7 +165,8 @@ public class MDBQuery {
         var valueString = ""
         
         if value == nil {
-            valueString = "NULL"
+            items.append("\(field) IS NULL")
+            return self
         }
         else if value is String {
             valueString = "'\(value as! String)'"
@@ -211,7 +215,8 @@ public class MDBQuery {
     }
 
     public func orderByValues() -> MDBQuery {
-        items.append("ORDER BY")
+        //items.append("ORDER BY")
+        useOrderBy = true
         return self
     }
     

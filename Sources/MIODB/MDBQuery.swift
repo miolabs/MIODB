@@ -116,6 +116,16 @@ public class MDBQuery {
         _ = try db.executeQueryString(queryString)
     }
     
+    public func insertAndReturnFieldValue(_ field:String) throws -> Any {
+        var queryString = "INSERT INTO \"\(insertTable)\""
+        queryString += " (" + insertFields.joined(separator: ",") + ")"
+        queryString += " VALUES (" + insertValues.joined(separator: ",") + ")"
+        let items = try db.executeQueryString(queryString + " RETURNING \(field)") as! [[String:Any]]
+                                
+        return items[0][field]!
+    }
+
+    
     public func updateTo(_ table:String) -> MDBQuery {
         updateTable = table
         currentStatment = .update

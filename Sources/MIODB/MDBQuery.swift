@@ -184,8 +184,20 @@ public class MDBQuery {
         else if value is Bool {
             valueString = (value as! Bool) ? "TRUE" : "FALSE"
         }
+        else if value is Int8 {
+                valueString = String(value as! Int8)
+        }
+        else if value is Int16 {
+            valueString = String(value as! Int16)
+        }
         else if value is Int {
             valueString = String(value as! Int)
+        }
+        else if value is Int32 {
+            valueString = String(value as! Int32)
+        }
+        else if value is Int64 {
+            valueString = String(value as! Int64)
         }
         else if value is Float {
             valueString = String(value as! Float)

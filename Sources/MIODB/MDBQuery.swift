@@ -169,7 +169,7 @@ public class MDBQuery {
         items.append("\(field) IS NOT NULL")
         return self
     }
-    
+            
     public func equal(field:String, value:Any?) -> MDBQuery {
         
         var valueString = ""

@@ -6,7 +6,7 @@ final class MIODBTests: XCTestCase {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct
         // results.
-        //XCTAssertEqual(MIODB().text, "Hello, World!")
+        // XCTAssertEqual(MIODB().text, "Hello, World!")
     }
 
     static var allTests = [

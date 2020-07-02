@@ -36,14 +36,17 @@ open class MIODB {
     
     var transactionQueryStrings : [String] = []
     
-    public init(connection:MDBConnection){
-         
+    public convenience init(connection:MDBConnection){
+         self.init( )
          self.host = connection.host
          self.port = connection.port
          self.user = connection.user
          self.password = connection.password
          self.database = connection.database
      }
+    
+    public init ( ) {
+    }
     
     open func connect(){
     }
@@ -52,7 +55,7 @@ open class MIODB {
         
     }
     
-    open func executeQueryString(_ query:String) throws -> [Any]{
+    open func executeQueryString(_ query:String) throws -> [[String : Any]]{
         return []
     }
     

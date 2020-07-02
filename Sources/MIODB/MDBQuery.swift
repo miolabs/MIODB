@@ -47,13 +47,18 @@ public class MDBQuery {
         items.append(item)
     }
     
-    // TODO: Return here [[String : Any]], so we don't have to make always a cast
-    public func execute() throws -> [Any]{
+    public func execute() throws -> [[String : Any]]{
+        return try db.executeQueryString(rawQuery())
+    }
+    
+    public func rawQuery() -> String {
         var queryString = items.joined(separator: " ")
+        
         if useOrderBy {
             queryString += " ORDER BY " + orderBy.joined(separator: ",")
         }
-        return try db.executeQueryString(queryString)
+        
+        return queryString
     }
 
     public func selectFields(_ fields:String) -> MDBQuery {
@@ -120,7 +125,7 @@ public class MDBQuery {
         var queryString = "INSERT INTO \"\(insertTable)\""
         queryString += " (" + insertFields.joined(separator: ",") + ")"
         queryString += " VALUES (" + insertValues.joined(separator: ",") + ")"
-        let items = try db.executeQueryString(queryString + " RETURNING \(field)") as! [[String:Any]]
+        let items = try db.executeQueryString(queryString + " RETURNING \(field)") // as [[String:Any]]
                                 
         return items[0][field]!
     }
@@ -265,6 +270,11 @@ public class MDBQuery {
     public func limit(_ rows:Int) -> MDBQuery {
         let rowsString = String(rows)
         extras.append("LIMIT \(rowsString)")
+        return self
+    }
+    
+    public func join( table: String, fromTable: String, column: String, joinType: String = "INNER" ) -> MDBQuery {
+        items.append( "\(joinType) JOIN \"\(table)\" ON \"\(table)\".\"id\" = \"\(fromTable)\".\"\(column)\"" )
         return self
     }
 }

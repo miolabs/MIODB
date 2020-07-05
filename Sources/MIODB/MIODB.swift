@@ -48,14 +48,14 @@ open class MIODB {
     public init ( ) {
     }
     
-    open func connect(){
+    open func connect() throws {
     }
 
     open func disconnect(){
         
     }
     
-    open func executeQueryString(_ query:String) throws -> [[String : Any]]{
+    @discardableResult open func executeQueryString(_ query:String) throws -> [[String : Any]]{
         return []
     }
     

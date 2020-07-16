@@ -54,8 +54,18 @@ open class MIODB {
     open func disconnect(){
         
     }
+
+    @discardableResult open func fetch ( _ table: String, _ id: String ) throws -> [String : Any?]? {
+        let enttty = try execute( MDBQuery( table ).select().andWhere( "id", .EQ, id ) )!
+
+        return enttty.count > 0 ? enttty.first! : nil
+    }
     
-    @discardableResult open func executeQueryString(_ query:String) throws -> [[String : Any]]{
+    @discardableResult open func execute(_ query: MDBQuery ) throws -> [[String : Any?]]? {
+        return try executeQueryString( query.rawQuery() )
+    }
+
+    @discardableResult open func executeQueryString(_ query:String) throws -> [[String : Any?]]? {
         return []
     }
     

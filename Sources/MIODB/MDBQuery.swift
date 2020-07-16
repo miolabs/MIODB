@@ -8,7 +8,69 @@
 
 import Foundation
 
+enum QUERY_TYPE
+{
+    case UNKOWN
+    case SELECT
+    case INSERT
+    case MULTI_INSERT
+    case UPDATE
+    case DELETE
+}
+
+
+public enum ORDER_BY_DIRECTION: String {
+    case ASC  = "ASC"
+    case DESC = "DESC"
+}
+
+
+struct OrderBy {
+    var field: String
+    var dir: ORDER_BY_DIRECTION = .ASC
+    
+    func raw ( ) -> String {
+        return field + " \(dir)"
+    }
+}
+
+public enum JOIN_TYPE: String {
+    case INNER = "INNER"
+    case LEFT  = "LEFT"
+    case RIGHT = "RIGHT"
+    case FULL  = "FULL"
+}
+
+struct Join {
+    var joinType: JOIN_TYPE
+    var table: String
+    var fromTable: String
+    var toTable: String
+    
+    func raw ( ) -> String {
+        return "\(joinType) JOIN \"\(table)\" ON \(fromTable) = \(toTable)"
+    }
+}
+
+
 public class MDBQuery {
+
+    // In some cases like "WHERE IN ()" we can predict the query will not return values
+    public var willBeEmpty: Bool = false
+    var table: String = ""
+    var queryType: QUERY_TYPE = .UNKOWN
+    var selectFields: String = ""
+    var values: MDBValues = [:]
+    var multiValues: [MDBValues] = []
+    var _whereCond: MDBWhereGroup? = nil
+    var whereStack: [ MDBWhereGroup ] = []
+    var _returning: String? = nil
+    var _limit: Int = 0
+    var _offset: Int = 0
+    var order: [ OrderBy ] = []
+    var joins: [ Join ] = []
+
+    // DEPRECATED
 
     public enum OrderType {
         case Asc
@@ -22,7 +84,6 @@ public class MDBQuery {
         case delete
     }
 
-    
     var db:MIODB!
     var currentStatment = StamentType.select
     
@@ -39,27 +100,320 @@ public class MDBQuery {
     var extras = [String]()
         
     public convenience init(db:MIODB){
-        self.init()
+        self.init( "" )
         self.db = db
     }
     
+    // END DEPRECATED
+    
+    public init( _ table: String ) {
+        self.table = table
+    }
+    
+//    public func select ( _ fields: String = "*" ) -> MDBQuery {
+//        queryType = .SELECT
+//        selectFields = MDBValue( fromTable: fields ).value
+//        return self
+//    }
+
+    
+    
+    public func returning ( _ args: String... ) -> MDBQuery {
+        var fields: [String] = []
+        
+        for field in args {
+            fields.append( MDBValue( fromTable: field ).value )
+        }
+        
+        _returning = fields.isEmpty ? "*" : fields.joined( separator: "," )
+        
+        return self
+    }
+    
+    func returningRaw ( ) -> String
+    {
+        return _returning != nil && _returning!.count > 0 ?  "RETURNING " + _returning! : ""
+    }
+    
+    
+    public func select ( _ args: String... ) -> MDBQuery {
+        var fields: [String] = []
+        
+        for field in args {
+            fields.append( MDBValue( fromTable: field ).value )
+        }
+                
+        queryType = .SELECT
+        selectFields = fields.isEmpty ? "*" : fields.joined( separator: "," )
+        return self
+    }
+
+    
+
+    
+    public func update ( _ val: [String:Any?] ) -> MDBQuery {
+        queryType = .UPDATE
+        self.values = toValues( val )
+        return self
+    }
+    
+    public func insert ( _ val: [String:Any?] ) -> MDBQuery {
+        queryType = .INSERT
+        self.values = toValues( val )
+        return self
+    }
+
+    
+    public func insert ( _ val: [[String:Any]] ) -> MDBQuery {
+        queryType = .MULTI_INSERT
+        self.multiValues = val.map{ toValues( $0 ) }
+        return self
+    }
+
+    public func delete ( ) -> MDBQuery {
+        queryType = .DELETE
+        return self
+    }
+    
+    
+    //
+    // WHERE
+    //
+    
+    private func whereCond ( ) -> MDBWhere {
+        if whereStack.isEmpty {
+            _whereCond = MDBWhereGroup( )
+            whereStack.append( _whereCond! )
+        }
+        
+        return whereStack.last!.where_fields
+    }
+    
+    public func startGroup ( ) -> MDBQuery {
+        let grp = MDBWhereGroup( )
+        whereCond( ).push( grp )
+        whereStack.append( grp )
+        
+        return self ;
+    }
+
+    public func endGroup ( ) -> MDBQuery {
+        whereStack.removeLast()
+        return self ;
+    }
+
+    private func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) -> MDBQuery {
+        whereCond( ).push( MDBWhereLine( where_op: where_op
+                                    , field: MDBValue(fromTable: field).value
+                                    , op: op
+                                    , value: MDBValue.fromValue( value ).value ) )
+        return self
+    }
+           
+    
+    public func andWhereNULL ( _ field: String ) -> MDBQuery {
+        return addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS, MDBValue( nil ) )
+    }
+
+    public func orWhereNULL ( _ field: String ) -> MDBQuery {
+        return addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IS, MDBValue( nil ) )
+    }
+
+    public func whereNotNULL ( _ field: String ) -> MDBQuery {
+        return addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS_NOT, MDBValue( nil ) )
+    }
+
+    public func orWhereNotNULL ( _ field: String ) -> MDBQuery {
+        return addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IS_NOT, MDBValue( nil ) )
+    }
+
+    public func andWhereIN ( _ field: String, _ vals: [Any] ) -> MDBQuery {
+        return addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IN, MDBValue.fromValue( vals ) )
+    }
+
+    public func orWhereIN ( _ field: String, _ vals: [Any] ) -> MDBQuery {
+        return addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IN, MDBValue.fromValue( vals ) )
+    }
+
+    public func andWhere ( _ field: String, _ value: Any ) -> MDBQuery {
+        return addWhereLine( .AND, field, .EQ, value )
+    }
+
+    public func andWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) -> MDBQuery {
+        return addWhereLine( .AND, field, op, value )
+    }
+
+    public func orWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) -> MDBQuery {
+        return addWhereLine( .OR, field, op, value )
+    }
+
+    
+    func whereRaw ( ) -> String {
+        return _whereCond != nil ? "WHERE " + _whereCond!.raw( ) : ""
+    }
+
+    //
+    // ORDER BY
+    //
+    
+    public func orderBy ( field: String, dir: ORDER_BY_DIRECTION = .ASC ) {
+        order.append( OrderBy( field: MDBValue( fromTable: field ).value, dir: dir ) )
+    }
+    
+    func orderRaw ( ) -> String {
+        return order.isEmpty ? "" : "ORDER BY " + order.map{ $0.raw( ) }.joined( separator: "," )
+    }
+
+    
+    //
+    // LIMIT
+    //
+
+    public func limit ( _ value: Int ) -> MDBQuery
+    {
+        // DEPRECATED
+        let rowsString = String(value)
+        extras.append("LIMIT \(rowsString)")
+        // END DEPRECATED
+        _limit = value ;
+        return self
+    }
+    
+    func limitRaw ( ) -> String { return _limit > 0 ? "LIMIT " + String( _limit ) : "" }
+    
+    
+    //
+    // OFFSET
+    //
+
+    public func offset ( _ value: Int ) -> MDBQuery { _offset = value ; return self }
+    func offsetRaw ( ) -> String { return _offset > 0 ? "OFFSET " + String( _offset ) : "" }
+    
+
+    
+    public func join( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER ) -> MDBQuery {
+        let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
+        let to_table   = MDBValue( fromTable: to ).value
+        
+        joins.append( Join( joinType: joinType, table: table, fromTable: from_table, toTable: to_table ) )
+        return self
+    }
+    
+    func joinRaw ( ) -> String {
+        return joins.map{ $0.raw( ) }.joined( separator: " " )
+    }
+
+    
+    
+    
+    public func mergeValues ( _ moreValues: [ String: Any ] ) -> MDBQuery {
+        values.merge( toValues( moreValues ) ) { (_, new) in new }
+        return self
+    }
+    
+    public func rawQuery() -> String {
+        switch queryType {
+            case .UNKOWN:
+                 var queryString = items.joined(separator: " ")
+            
+                 if useOrderBy {
+                    queryString += " ORDER BY " + orderBy.joined(separator: ",")
+                 }
+            
+                 return queryString
+            case .SELECT:
+                 return composeQuery( [ "SELECT " + selectFields + " FROM " + MDBValue( fromTable: table ).value
+                                      , joinRaw( )
+                                      , whereRaw( )
+                                      , orderRaw( )
+                                      , limitRaw( )
+                                      , offsetRaw( )
+                                      ] )
+            case .INSERT:
+                 let sorted_values = sortedValues()
+                 
+                 return composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
+                                      , valuesFieldsRaw( sorted_values )
+                                      , "VALUES"
+                                      , valuesValuesRaw( sorted_values )
+                                      , returningRaw()
+                                      , whereRaw( )
+                                      ] )
+            case .MULTI_INSERT:
+                 let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
+                 return composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
+                                      , valuesFieldsRaw( sorted_values )
+                                      , "VALUES"
+                                      , multiValuesRaw( sorted_values )
+                                      , returningRaw()
+                                      , whereRaw( )
+                                      ] )
+            case .UPDATE:
+                 return composeQuery( [ "UPDATE " + MDBValue( fromTable: table ).value + " SET"
+                                      , valuesRaw( )
+                                      , returningRaw()
+                                      , whereRaw( )
+                                      ] )
+            case .DELETE:
+                 return composeQuery( [ "DELETE FROM " + MDBValue( fromTable: table ).value
+                                      , whereRaw( )
+                                      ] )
+        }
+    }
+
+    func composeQuery ( _ parts: [String?] ) -> String {
+        return (parts.filter{ $0 != nil && $0 != "" } as! [String]).joined(separator: " " )
+    }
+    
+    func valuesRaw( ) -> String {
+        var key_eq_values: [String] = []
+
+        for (key,value) in sortedValues() {
+            key_eq_values.append( "\"" + key + "\"=" + value.value )
+        }
+        
+        return key_eq_values.joined(separator: ",")
+    }
+
+    // Unfortunatelly dictionaries do not respect the declaration order, so we need to sorted them for testing
+    func sortedValues ( _ v: MDBValues? = nil ) -> [(key:String,value:MDBValue)] {
+        return ( v == nil ? values : v! ).sorted { (v1,v2) in v1.key < v2.key }
+    }
+    
+    func valuesFieldsRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+        return  "(" + (sorted_values.map{ "\"\($0.key)\"" }).joined(separator: ",") + ")"
+    }
+
+    func valuesValuesRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+        return "(" + (sorted_values.map{ $0.value.value }).joined(separator: ",") + ")"
+    }
+
+    
+    func multiValuesRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+        return  multiValues.map{ row in
+                                  "(" + sorted_values.map{ col in row[ col.key ]!.value }.joined(separator: "," ) + ")"
+                               }.joined(separator: ",")
+    }
+
+    // DEPRECATED
+    public func join( table: String, fromTable: String, column: String, joinType: String = "INNER" ) -> MDBQuery {
+        items.append( "\(joinType) JOIN \"\(table)\" ON \"\(table)\".\"id\" = \"\(fromTable)\".\"\(column)\"" )
+        return self
+    }
+
+    
+    //
+    // DEPRECATED
+    //
+
     public func append(_ item:String){
         items.append(item)
     }
     
-    public func execute() throws -> [[String : Any]]{
+    public func execute() throws -> [[String : Any]]? {
         return try db.executeQueryString(rawQuery())
     }
     
-    public func rawQuery() -> String {
-        var queryString = items.joined(separator: " ")
-        
-        if useOrderBy {
-            queryString += " ORDER BY " + orderBy.joined(separator: ",")
-        }
-        
-        return queryString
-    }
 
     public func selectFields(_ fields:String) -> MDBQuery {
         items.append("SELECT \(fields)")
@@ -67,6 +421,7 @@ public class MDBQuery {
     }
     
     public func fromTable(_ table:String) -> MDBQuery {
+        self.table = table
         items.append("FROM \"\(table)\"")
         return self
     }
@@ -125,7 +480,7 @@ public class MDBQuery {
         var queryString = "INSERT INTO \"\(insertTable)\""
         queryString += " (" + insertFields.joined(separator: ",") + ")"
         queryString += " VALUES (" + insertValues.joined(separator: ",") + ")"
-        let items = try db.executeQueryString(queryString + " RETURNING \(field)") // as [[String:Any]]
+        let items = try db.executeQueryString(queryString + " RETURNING \(field)")! // as [[String:Any]]
                                 
         return items[0][field]!
     }
@@ -149,7 +504,7 @@ public class MDBQuery {
         return self
     }
     
-    public func delete() throws {
+    public func execDelete() throws {
         var queryString = items.joined(separator: " ")
         queryString += " " + orderBy.joined(separator: ",")
         _ = try db.executeQueryString(queryString)
@@ -267,14 +622,9 @@ public class MDBQuery {
         }
     }
     
-    public func limit(_ rows:Int) -> MDBQuery {
-        let rowsString = String(rows)
-        extras.append("LIMIT \(rowsString)")
-        return self
-    }
-    
-    public func join( table: String, fromTable: String, column: String, joinType: String = "INNER" ) -> MDBQuery {
-        items.append( "\(joinType) JOIN \"\(table)\" ON \"\(table)\".\"id\" = \"\(fromTable)\".\"\(column)\"" )
-        return self
-    }
+//    public func limit(_ rows:Int) -> MDBQuery {
+//        let rowsString = String(rows)
+//        extras.append("LIMIT \(rowsString)")
+//        return self
+//    }
 }

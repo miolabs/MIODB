@@ -117,6 +117,8 @@ public class MDBQuery {
 //    }
 
     
+    public static func beginTransactionStament() -> String { return( "BEGIN TRANSACTION;" ) }
+    public static func commitTransactionStament() -> String { return( "COMMIT TRANSACTION;" ) }
     
     public func returning ( _ args: String... ) -> MDBQuery {
         var fields: [String] = []

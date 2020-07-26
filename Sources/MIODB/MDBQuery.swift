@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum QUERY_TYPE
+public enum QUERY_TYPE
 {
     case UNKOWN
     case SELECT
@@ -58,13 +58,13 @@ public class MDBQuery {
     // In some cases like "WHERE IN ()" we can predict the query will not return values
     public var willBeEmpty: Bool = false
     var table: String = ""
-    var queryType: QUERY_TYPE = .UNKOWN
-    var selectFields: String = ""
+    public var queryType: QUERY_TYPE = .UNKOWN
+    var _selectFields: [ String ] = []
     var values: MDBValues = [:]
     var multiValues: [MDBValues] = []
     var _whereCond: MDBWhereGroup? = nil
     var whereStack: [ MDBWhereGroup ] = []
-    var _returning: String? = nil
+    var _returning: [String] = []
     var _limit: Int = 0
     var _offset: Int = 0
     var order: [ OrderBy ] = []
@@ -110,44 +110,34 @@ public class MDBQuery {
         self.table = table
     }
     
-//    public func select ( _ fields: String = "*" ) -> MDBQuery {
-//        queryType = .SELECT
-//        selectFields = MDBValue( fromTable: fields ).value
-//        return self
-//    }
-
-    
     
     public func returning ( _ args: String... ) -> MDBQuery {
-        var fields: [String] = []
-        
         for field in args {
-            fields.append( MDBValue( fromTable: field ).value )
+            _returning.append( MDBValue( fromTable: field ).value )
         }
-        
-        _returning = fields.isEmpty ? "*" : fields.joined( separator: "," )
         
         return self
     }
     
     func returningRaw ( ) -> String
     {
-        return _returning != nil && _returning!.count > 0 ?  "RETURNING " + _returning! : ""
+        return _returning.isEmpty ? "" : "RETURNING " + _returning.joined( separator: "," )
     }
     
     
     public func select ( _ args: String... ) -> MDBQuery {
-        var fields: [String] = []
-        
         for field in args {
-            fields.append( MDBValue( fromTable: field ).value )
+            _selectFields.append( MDBValue( fromTable: field ).value )
         }
                 
         queryType = .SELECT
-        selectFields = fields.isEmpty ? "*" : fields.joined( separator: "," )
+
         return self
     }
 
+    public func selectFieldsRaw ( ) -> String {
+        return _selectFields.isEmpty ? "*" : _selectFields.joined( separator: "," )
+    }
     
 
     
@@ -164,7 +154,7 @@ public class MDBQuery {
     }
 
     
-    public func insert ( _ val: [[String:Any]] ) -> MDBQuery {
+    public func insert ( _ val: [[String:Any?]] ) -> MDBQuery {
         queryType = .MULTI_INSERT
         self.multiValues = val.map{ toValues( $0 ) }
         return self
@@ -189,7 +179,7 @@ public class MDBQuery {
         return whereStack.last!.where_fields
     }
     
-    public func startGroup ( ) -> MDBQuery {
+    public func beginGroup ( ) -> MDBQuery {
         let grp = MDBWhereGroup( )
         whereCond( ).push( grp )
         whereStack.append( grp )
@@ -202,7 +192,7 @@ public class MDBQuery {
         return self ;
     }
 
-    private func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) -> MDBQuery {
+    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) -> MDBQuery {
         whereCond( ).push( MDBWhereLine( where_op: where_op
                                     , field: MDBValue(fromTable: field).value
                                     , op: op
@@ -219,7 +209,7 @@ public class MDBQuery {
         return addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IS, MDBValue( nil ) )
     }
 
-    public func whereNotNULL ( _ field: String ) -> MDBQuery {
+    public func andWhereNotNULL ( _ field: String ) -> MDBQuery {
         return addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS_NOT, MDBValue( nil ) )
     }
 
@@ -256,8 +246,9 @@ public class MDBQuery {
     // ORDER BY
     //
     
-    public func orderBy ( field: String, dir: ORDER_BY_DIRECTION = .ASC ) {
+    public func orderBy ( _ field: String, _ dir: ORDER_BY_DIRECTION = .ASC ) -> MDBQuery {
         order.append( OrderBy( field: MDBValue( fromTable: field ).value, dir: dir ) )
+        return self
     }
     
     func orderRaw ( ) -> String {
@@ -306,7 +297,7 @@ public class MDBQuery {
     
     
     
-    public func mergeValues ( _ moreValues: [ String: Any ] ) -> MDBQuery {
+    public func mergeValues ( _ moreValues: [ String: Any? ] ) -> MDBQuery {
         values.merge( toValues( moreValues ) ) { (_, new) in new }
         return self
     }
@@ -322,7 +313,7 @@ public class MDBQuery {
             
                  return queryString
             case .SELECT:
-                 return composeQuery( [ "SELECT " + selectFields + " FROM " + MDBValue( fromTable: table ).value
+                 return composeQuery( [ "SELECT " + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
                                       , joinRaw( )
                                       , whereRaw( )
                                       , orderRaw( )
@@ -336,8 +327,8 @@ public class MDBQuery {
                                       , valuesFieldsRaw( sorted_values )
                                       , "VALUES"
                                       , valuesValuesRaw( sorted_values )
-                                      , returningRaw()
                                       , whereRaw( )
+                                      , returningRaw()
                                       ] )
             case .MULTI_INSERT:
                  let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
@@ -345,14 +336,14 @@ public class MDBQuery {
                                       , valuesFieldsRaw( sorted_values )
                                       , "VALUES"
                                       , multiValuesRaw( sorted_values )
-                                      , returningRaw()
                                       , whereRaw( )
+                                      , returningRaw()
                                       ] )
             case .UPDATE:
                  return composeQuery( [ "UPDATE " + MDBValue( fromTable: table ).value + " SET"
                                       , valuesRaw( )
-                                      , returningRaw()
                                       , whereRaw( )
+                                      , returningRaw()
                                       ] )
             case .DELETE:
                  return composeQuery( [ "DELETE FROM " + MDBValue( fromTable: table ).value
@@ -410,7 +401,7 @@ public class MDBQuery {
         items.append(item)
     }
     
-    public func execute() throws -> [[String : Any]]? {
+    public func execute() throws -> [[String : Any?]]? {
         return try db.executeQueryString(rawQuery())
     }
     

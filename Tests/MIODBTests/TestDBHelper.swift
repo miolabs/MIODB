@@ -121,11 +121,11 @@ class TestDBHelper: XCTestCase {
         
         
         let query3 = MDBQuery( "product" ).select( )
-                                           .startGroup()
+                                           .beginGroup()
                                              .orWhere("name", .LT, "hello world")
                                              .orWhere("price", .GE, 15 )
                                            .endGroup()
-                                           .startGroup()
+                                           .beginGroup()
                                              .andWhere( "max", .EQ, 1234 )
                                            .endGroup()
                                          .rawQuery( ) ;
@@ -134,12 +134,12 @@ class TestDBHelper: XCTestCase {
 
         
         let query3_1 = MDBQuery( "product" ).select( )
-                                           .startGroup()
-                                               .startGroup()
+                                           .beginGroup()
+                                               .beginGroup()
                                                  .orWhere("name", .LT, "hello world")
                                                  .orWhere("price", .GE, 15 )
                                                .endGroup()
-                                               .startGroup()
+                                               .beginGroup()
                                                  .andWhere( "max", .EQ, 1234 )
                                                .endGroup()
                                            .endGroup()
@@ -149,7 +149,7 @@ class TestDBHelper: XCTestCase {
 
         
         let query3_2 = MDBQuery( "product" ).select( )
-                                           .startGroup()
+                                           .beginGroup()
                                              .orWhere("name", .LT, "hello world")
                                              .orWhere("price", .GE, 15 )
                                            .endGroup()
@@ -160,10 +160,10 @@ class TestDBHelper: XCTestCase {
 
         
         let query4 = MDBQuery( "product" ).select( )
-                                         .startGroup()
+                                         .beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
-                                           .startGroup()
+                                           .beginGroup()
                                              .andWhere( "max", .GT, 1234 )
                                              .andWhere( "max", .LT, 2000 )
                                            .endGroup()
@@ -178,7 +178,7 @@ class TestDBHelper: XCTestCase {
     
     
     func testInsertWhere ( ) throws {
-        let query = MDBQuery( "product" ).startGroup()
+        let query = MDBQuery( "product" ).beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
                                          .endGroup()
@@ -195,12 +195,12 @@ class TestDBHelper: XCTestCase {
                                          .insert( [ "modifier": 10, "str": "Hello" ] )
         let query_str = query.rawQuery( ) ;
         
-        XCTAssert( query_str == "INSERT INTO \"product\" (\"modifier\",\"str\") VALUES (10,'Hello') RETURNING \"name\",\"price\" WHERE \"price\" = 15", query_str )
+        XCTAssert( query_str == "INSERT INTO \"product\" (\"modifier\",\"str\") VALUES (10,'Hello') WHERE \"price\" = 15 RETURNING \"name\",\"price\"", query_str )
     }
 
     
     func testMultipleInsertWhere ( ) throws {
-        let query = MDBQuery( "product" ).startGroup()
+        let query = MDBQuery( "product" ).beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
                                          .endGroup()
@@ -212,7 +212,7 @@ class TestDBHelper: XCTestCase {
 
     
     func testUpdateWhere ( ) throws {
-        let query = MDBQuery( "product" ).startGroup()
+        let query = MDBQuery( "product" ).beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
                                          .endGroup()
@@ -236,4 +236,15 @@ class TestDBHelper: XCTestCase {
         
         XCTAssert( query2 == "SELECT * FROM \"product\" FULL JOIN \"modifier\" ON \"modifier\".\"identifier\" = \"product\".\"productModifier\"", query2 )
     }
+
+    
+     func testOrder ( ) throws {
+         let query = MDBQuery( "product" ).orderBy( "name", .ASC )
+                                          .orderBy( "surname", .DESC )
+                                          .select( ).rawQuery( ) ;
+         
+         // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
+         XCTAssert( query == "SELECT * FROM \"product\" ORDER BY \"name\" ASC,\"surname\" DESC", query )
+     }
+
 }

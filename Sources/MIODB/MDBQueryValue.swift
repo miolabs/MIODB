@@ -10,7 +10,7 @@ import Foundation
 public class MDBValue {
     public var value: String = "" ;
 
-    init( _ v: Any? ) {
+    public init( _ v: Any? ) {
         if v == nil || v is NSNull { value = "NULL"               }
         else if v is [Any]         { value = "(" + (v as! [Any]).map{ MDBValue.fromValue( $0 ).value }
                                                                 .joined( separator: "," ) + ")" }
@@ -32,13 +32,13 @@ public class MDBValue {
     }
 
     
-    init( fromTable: String ) {
+    public init( fromTable: String ) {
         value = fromTable.split( separator: "," )
                          .map{ checkAS( $0 ) }
                          .joined(separator: ",") as String
     }
 
-    init( raw: String ) {
+    public init( raw: String ) {
         value = raw
     }
 

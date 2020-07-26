@@ -83,6 +83,9 @@ open class MIODB {
         if isInsideTransaction {
             throw MIODBError.cantBeginTransactionWhileInsideTransaction
         }
+        
+        try executeQueryString(MDBQuery.beginTransactionStament())
+        
         isInsideTransaction = true
     }
 
@@ -93,7 +96,8 @@ open class MIODB {
         
         isInsideTransaction = false
         
-        _ = try executeQueryString(transactionQueryStrings.joined(separator: "; "))
+        try executeQueryString(MDBQuery.commitTransactionStament())
+        //_ = try executeQueryString(transactionQueryStrings.joined(separator: "; "))
         transactionQueryStrings.removeAll()
     }
     

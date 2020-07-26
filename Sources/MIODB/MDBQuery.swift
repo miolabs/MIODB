@@ -110,6 +110,15 @@ public class MDBQuery {
         self.table = table
     }
     
+//    public func select ( _ fields: String = "*" ) -> MDBQuery {
+//        queryType = .SELECT
+//        selectFields = MDBValue( fromTable: fields ).value
+//        return self
+//    }
+
+    
+    public static func beginTransactionStament() -> String { return( "BEGIN TRANSACTION" ) }
+    public static func commitTransactionStament() -> String { return( "COMMIT TRANSACTION" ) }
     
     public func returning ( _ args: String... ) -> MDBQuery {
         for field in args {

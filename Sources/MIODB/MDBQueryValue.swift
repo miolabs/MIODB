@@ -15,6 +15,7 @@ public class MDBValue {
         else if v is [Any]         { value = "(" + (v as! [Any]).map{ MDBValue.fromValue( $0 ).value }
                                                                 .joined( separator: "," ) + ")" }
         else if v is String        { value = "'\(v as! String)'"  }
+        else if "\(type( of: v! ))" == "__NSCFBoolean" { value = (v as! Bool) ? "TRUE" : "FALSE" }
         else if v is Int           { value = String(v as! Int)    }
         else if v is Float         { value = String(v as! Float)  }
         else if v is Double        { value = String(v as! Double) }

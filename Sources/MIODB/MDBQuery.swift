@@ -208,7 +208,16 @@ public class MDBQuery {
                                     , value: MDBValue.fromValue( value ).value ) )
         return self
     }
-           
+
+               
+    public func andWhereRaw ( _ raw: String ) -> MDBQuery {
+        return addWhereLine( .AND, "", WHERE_LINE_OPERATOR.RAW, MDBValue.init(raw: raw) )
+    }
+
+    public func orWhereRaw ( _ raw: String ) -> MDBQuery {
+        return addWhereLine( .OR, "", WHERE_LINE_OPERATOR.RAW, MDBValue.init(raw: raw) )
+    }
+
     
     public func andWhereNULL ( _ field: String ) -> MDBQuery {
         return addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS, MDBValue( nil ) )

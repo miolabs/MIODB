@@ -19,6 +19,7 @@ public enum WHERE_LINE_OPERATOR: String {
     case IS = "IS"
     case IS_NOT = "IS NOT"
     case LIKE = "LIKE"
+    case ILIKE = "ILIKE"
     case RAW = ""
 }
 

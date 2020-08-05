@@ -56,9 +56,9 @@ open class MIODB {
     }
 
     @discardableResult open func fetch ( _ table: String, _ id: String ) throws -> [String : Any?]? {
-        let enttty = try execute( MDBQuery( table ).select().andWhere( "id", .EQ, id ) )!
+        let entity = try execute( MDBQuery( table ).select().andWhere( "id", .EQ, id ) )!
 
-        return enttty.count > 0 ? enttty.first! : nil
+        return entity.first
     }
     
     @discardableResult open func execute(_ query: MDBQuery ) throws -> [[String : Any?]]? {

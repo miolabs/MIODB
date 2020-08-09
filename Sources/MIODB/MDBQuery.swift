@@ -303,8 +303,12 @@ public class MDBQuery {
     public func join( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER ) -> MDBQuery {
         let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
         let to_table   = MDBValue( fromTable: to ).value
+        let new_join   = Join( joinType: joinType, table: table, fromTable: from_table, toTable: to_table )
+        let join_already_done = joins.filter{ j in j.raw( ) == new_join.raw( ) }.count > 0
         
-        joins.append( Join( joinType: joinType, table: table, fromTable: from_table, toTable: to_table ) )
+        if !join_already_done {
+          joins.append( new_join )
+        }
         return self
     }
     

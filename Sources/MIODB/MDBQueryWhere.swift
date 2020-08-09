@@ -10,6 +10,7 @@ import Foundation
 
 public enum WHERE_LINE_OPERATOR: String {
     case EQ = "="
+    case NEQ = "!="
     case LT = "<"
     case LE = "<="
     case GT = ">"

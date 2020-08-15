@@ -14,7 +14,9 @@ public class MDBValue {
         if v == nil || v is NSNull { value = "NULL"               }
         else if v is [Any]         { value = "(" + (v as! [Any]).map{ MDBValue.fromValue( $0 ).value }
                                                                 .joined( separator: "," ) + ")" }
-        else if v is String        { value = isPartialString ?  "'%\(v as! String)%'" :  "'\(v as! String)'"  }
+        else if v is String        { value = isPartialString ?
+                                                "'%" + MDBValue.escape_string( v as! String ) + "%'"
+                                             :  "'"  + MDBValue.escape_string( v as! String ) + "'"  }
         else if "\(type( of: v! ))" == "__NSCFBoolean" { value = (v as! Bool) ? "TRUE" : "FALSE" }
         else if v is Int           { value = String(v as! Int)    }
         else if v is Float         { value = String(v as! Float)  }
@@ -26,6 +28,11 @@ public class MDBValue {
         else if v is Bool          { value = (v as! Bool) ? "TRUE" : "FALSE" }
         // TODO: Exception!
         // TODO: Date?
+    }
+    
+    public static func escape_string ( _ str: String ) -> String {
+        return str.replacingOccurrences(of: "\'", with: "'" )
+                  .replacingOccurrences(of: "'", with: "''" )
     }
     
     public static func fromValue ( _ value: Any? ) -> MDBValue {

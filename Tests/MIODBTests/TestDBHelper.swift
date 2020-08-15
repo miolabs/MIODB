@@ -25,6 +25,7 @@ class TestDBHelper: XCTestCase {
         XCTAssertTrue( MDBValue.fromValue(nil).value == "NULL", "NULL" )
         XCTAssertTrue( MDBValue.fromValue("hello").value == "'hello'", "'hello'" )
         XCTAssertTrue( MDBValue.fromValue([10,"hello",true]).value == "(10,'hello',TRUE)", "[10,'hello',true]" )
+        XCTAssertTrue( MDBValue.fromValue("don't put damn \' or we have to scape the '").value == "'don''t put damn '' or we have to scape the '''", "'don''t put damn '' or we have to scape the '''" )
     }
     
 

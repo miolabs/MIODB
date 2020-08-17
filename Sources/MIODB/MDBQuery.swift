@@ -60,8 +60,8 @@ public class MDBQuery {
     var table: String = ""
     public var queryType: QUERY_TYPE = .UNKOWN
     var _selectFields: [ String ] = []
-    var values: MDBValues = [:]
-    var multiValues: [MDBValues] = []
+    public var values: MDBValues = [:]
+    public var multiValues: [MDBValues] = []
     var _whereCond: MDBWhereGroup? = nil
     var whereStack: [ MDBWhereGroup ] = []
     var _returning: [String] = []

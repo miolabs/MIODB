@@ -25,6 +25,7 @@ public class MDBValue {
         else if v is Int16         { value = String(v as! Int16)  }
         else if v is Int32         { value = String(v as! Int32)  }
         else if v is Int64         { value = String(v as! Int64)  }
+        else if v is Decimal       { value = NSDecimalNumber(decimal: (v as! Decimal)).stringValue }
         else if v is Bool          { value = (v as! Bool) ? "TRUE" : "FALSE" }
         // TODO: Exception!
         // TODO: Date?

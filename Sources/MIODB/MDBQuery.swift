@@ -46,9 +46,10 @@ struct Join {
     var table: String
     var fromTable: String
     var toTable: String
+    var asWhat: String? = nil
     
     func raw ( ) -> String {
-        return "\(joinType) JOIN \"\(table)\" ON \(fromTable) = \(toTable)"
+        return "\(joinType) JOIN \"\(table)\" ON \(fromTable) = \(toTable)" + (asWhat != nil ? " AS \(asWhat!)" : "")
     }
 }
 
@@ -300,10 +301,10 @@ public class MDBQuery {
     
 
     
-    public func join( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER ) -> MDBQuery {
+    public func join( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil ) -> MDBQuery {
         let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
         let to_table   = MDBValue( fromTable: to ).value
-        let new_join   = Join( joinType: joinType, table: table, fromTable: from_table, toTable: to_table )
+        let new_join   = Join( joinType: joinType, table: table, fromTable: from_table, toTable: to_table, asWhat: as_what )
         let join_already_done = joins.filter{ j in j.raw( ) == new_join.raw( ) }.count > 0
         
         if !join_already_done {

@@ -49,7 +49,7 @@ struct Join {
     var asWhat: String? = nil
     
     func raw ( ) -> String {
-        return "\(joinType) JOIN \"\(table)\" ON \(fromTable) = \(toTable)" + (asWhat != nil ? " AS \(asWhat!)" : "")
+        return "\(joinType) JOIN \"\(table)\"" + (asWhat != nil ? " AS \"\(asWhat!)\"" : "") + " ON \(fromTable) = \(toTable)"
     }
 }
 

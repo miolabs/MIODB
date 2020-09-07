@@ -135,9 +135,11 @@ public class MDBQuery {
     }
     
     
-    public func select ( _ args: String... ) -> MDBQuery {
+    public func select ( _ args: Any... ) -> MDBQuery {
         for field in args {
-            _selectFields.append( MDBValue( fromTable: field ).value )
+            let select_field: MDBValue = field is MDBValue ? field as! MDBValue : MDBValue( fromTable: field as! String )
+            
+            _selectFields.append( select_field.value )
         }
                 
         queryType = .SELECT

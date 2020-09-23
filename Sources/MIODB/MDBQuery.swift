@@ -153,22 +153,22 @@ public class MDBQuery {
     
 
     
-    public func update ( _ val: [String:Any?] ) -> MDBQuery {
+    public func update ( _ val: [String:Any?] ) throws -> MDBQuery {
         queryType = .UPDATE
-        self.values = toValues( val )
+        self.values = try toValues( val )
         return self
     }
     
-    public func insert ( _ val: [String:Any?] ) -> MDBQuery {
+    public func insert ( _ val: [String:Any?] ) throws -> MDBQuery {
         queryType = .INSERT
-        self.values = toValues( val )
+        self.values = try toValues( val )
         return self
     }
 
     
-    public func insert ( _ val: [[String:Any?]] ) -> MDBQuery {
+    public func insert ( _ val: [[String:Any?]] ) throws -> MDBQuery {
         queryType = .MULTI_INSERT
-        self.multiValues = val.map{ toValues( $0 ) }
+        self.multiValues = try val.map{ try toValues( $0 ) }
         return self
     }
 
@@ -204,58 +204,58 @@ public class MDBQuery {
         return self ;
     }
 
-    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) -> MDBQuery {
+    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> MDBQuery {
         whereCond( ).push( MDBWhereLine( where_op: where_op
                                     , field: MDBValue(fromTable: field).value
                                     , op: op
-                                    , value: MDBValue.fromValue( value ).value ) )
+                                    , value: try MDBValue.fromValue( value ).value ) )
         return self
     }
 
                
     public func andWhereRaw ( _ raw: String ) -> MDBQuery {
-        return addWhereLine( .AND, "", WHERE_LINE_OPERATOR.RAW, MDBValue.init(raw: raw) )
+        return try! addWhereLine( .AND, "", WHERE_LINE_OPERATOR.RAW, MDBValue.init(raw: raw) )
     }
 
     public func orWhereRaw ( _ raw: String ) -> MDBQuery {
-        return addWhereLine( .OR, "", WHERE_LINE_OPERATOR.RAW, MDBValue.init(raw: raw) )
+        return try! addWhereLine( .OR, "", WHERE_LINE_OPERATOR.RAW, MDBValue.init(raw: raw) )
     }
 
     
     public func andWhereNULL ( _ field: String ) -> MDBQuery {
-        return addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS, MDBValue( nil ) )
+        return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS, try! MDBValue( nil ) )
     }
 
-    public func orWhereNULL ( _ field: String ) -> MDBQuery {
-        return addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IS, MDBValue( nil ) )
+    public func orWhereNULL ( _ field: String ) throws -> MDBQuery {
+        return try! addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IS, try! MDBValue( nil ) )
     }
 
     public func andWhereNotNULL ( _ field: String ) -> MDBQuery {
-        return addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS_NOT, MDBValue( nil ) )
+        return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS_NOT, try! MDBValue( nil ) )
     }
 
     public func orWhereNotNULL ( _ field: String ) -> MDBQuery {
-        return addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IS_NOT, MDBValue( nil ) )
+        return try! addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IS_NOT, try! MDBValue( nil ) )
     }
 
-    public func andWhereIN ( _ field: String, _ vals: [Any] ) -> MDBQuery {
-        return addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IN, MDBValue.fromValue( vals ) )
+    public func andWhereIN ( _ field: String, _ vals: [Any] ) throws -> MDBQuery {
+        return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IN, try MDBValue.fromValue( vals ) )
     }
 
-    public func orWhereIN ( _ field: String, _ vals: [Any] ) -> MDBQuery {
-        return addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IN, MDBValue.fromValue( vals ) )
+    public func orWhereIN ( _ field: String, _ vals: [Any] ) throws -> MDBQuery {
+        return try addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IN, try MDBValue.fromValue( vals ) )
     }
 
-    public func andWhere ( _ field: String, _ value: Any ) -> MDBQuery {
-        return addWhereLine( .AND, field, .EQ, value )
+    public func andWhere ( _ field: String, _ value: Any ) throws -> MDBQuery {
+        return try addWhereLine( .AND, field, .EQ, value )
     }
 
-    public func andWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) -> MDBQuery {
-        return addWhereLine( .AND, field, op, value )
+    public func andWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) throws -> MDBQuery {
+        return try addWhereLine( .AND, field, op, value )
     }
 
-    public func orWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) -> MDBQuery {
-        return addWhereLine( .OR, field, op, value )
+    public func orWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) throws -> MDBQuery {
+        return try addWhereLine( .OR, field, op, value )
     }
 
     
@@ -322,8 +322,8 @@ public class MDBQuery {
     
     
     
-    public func mergeValues ( _ moreValues: [ String: Any? ] ) -> MDBQuery {
-        values.merge( toValues( moreValues ) ) { (_, new) in new }
+    public func mergeValues ( _ moreValues: [ String: Any? ] ) throws -> MDBQuery {
+        values.merge( try toValues( moreValues ) ) { (_, new) in new }
         return self
     }
     

@@ -7,13 +7,48 @@
 
 import Foundation
 
+public enum MDBValueError: Error {
+    case couldNotConvert( _ value: Any )
+}
+
+extension MDBValueError: LocalizedError {
+public var errorDescription: String? {
+    switch self {
+    case let .couldNotConvert(value):
+        return "[MDBValue] Could not initialize with \(value) becasue its type is not supported."
+    }
+    }
+}
+
+
+public typealias MDBValueTypeConversionCallBack = ( _ targetType: Any ) -> String
+
+struct MDBValueTypeConversion
+{
+    public let target: AnyClass
+    public let convert: MDBValueTypeConversionCallBack
+    
+    func canConvert ( _ value: Any ) -> Bool {
+        return target == type( of: value )
+    }
+}
+
+
 public class MDBValue {
     public var value: String = "" ;
 
-    public init( _ v: Any?, isPartialString: Bool = false ) {
+    static var convert: [ MDBValueTypeConversion ] = []
+    public static func register_type_conversion ( _ target: AnyClass, _ fn: @escaping MDBValueTypeConversionCallBack ) {
+        convert.append( MDBValueTypeConversion( target: target, convert: fn ) )
+    }
+    
+    public init( _ v: Any?, isPartialString: Bool = false ) throws {
         if v == nil || v is NSNull { value = "NULL"               }
-        else if v is [Any]         { value = "(" + (v as! [Any]).map{ MDBValue.fromValue( $0 ).value }
-                                                                .joined( separator: "," ) + ")" }
+        else if v is [Any]         {
+                                     let list = try (v as! [Any]).map{ try MDBValue.fromValue( $0 ).value }
+            
+                                     value = "(" + list.joined( separator: "," ) + ")"
+                                   }
         else if v is String        { value = isPartialString ?
                                                 "'%" + MDBValue.escape_string( v as! String ) + "%'"
                                              :  "'"  + MDBValue.escape_string( v as! String ) + "'"  }
@@ -21,14 +56,34 @@ public class MDBValue {
         else if v is Int           { value = String(v as! Int)    }
         else if v is Float         { value = String(v as! Float)  }
         else if v is Double        { value = String(v as! Double) }
+        else if v is UUID          { value = "'" + (v as! UUID).uuidString + "'" }
         else if v is Int8          { value = String(v as! Int8)   }
         else if v is Int16         { value = String(v as! Int16)  }
         else if v is Int32         { value = String(v as! Int32)  }
         else if v is Int64         { value = String(v as! Int64)  }
         else if v is Decimal       { value = NSDecimalNumber(decimal: (v as! Decimal)).stringValue }
         else if v is Bool          { value = (v as! Bool) ? "TRUE" : "FALSE" }
-        // TODO: Exception!
-        // TODO: Date?
+        else if v is Date          {
+                                     let df = DateFormatter( )
+                                     df.timeZone = TimeZone( secondsFromGMT: 0 )
+                                     df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss" ;
+                                     value = "'" + df.string( from: (v as! Date) ) + "'"
+                                   }
+        else {
+            var converted = false
+            
+            for c in MDBValue.convert {
+                if c.canConvert( v! ) {
+                    value = c.convert( v! )
+                    converted = true
+                    break
+                }
+            }
+            
+            if !converted {
+                throw MDBValueError.couldNotConvert( v! )
+            }
+        }
     }
     
     public static func escape_string ( _ str: String ) -> String {
@@ -36,8 +91,8 @@ public class MDBValue {
                   .replacingOccurrences(of: "'", with: "''" )
     }
     
-    public static func fromValue ( _ value: Any? ) -> MDBValue {
-        return value is MDBValue ? value as! MDBValue : MDBValue( value )
+    public static func fromValue ( _ value: Any? ) throws -> MDBValue {
+        return value is MDBValue ? value as! MDBValue : try MDBValue( value )
     }
 
     
@@ -67,11 +122,11 @@ public class MDBValue {
 }
 
 
-public func toValues ( _ dict: [String:Any?] ) -> [String:MDBValue] {
+public func toValues ( _ dict: [String:Any?] ) throws -> [String:MDBValue] {
     var ret: [String:MDBValue] = [:]
     
     for (key,value) in dict {
-        ret.updateValue( MDBValue.fromValue( value ), forKey: key)
+        ret.updateValue( try MDBValue.fromValue( value ), forKey: key)
     }
     
     return ret

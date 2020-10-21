@@ -242,8 +242,16 @@ public class MDBQuery {
         return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IN, try MDBValue.fromValue( vals ) )
     }
 
+    public func andWhereNotIN ( _ field: String, _ vals: [Any] ) throws -> MDBQuery {
+        return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.NOT_IN, try MDBValue.fromValue( vals ) )
+    }
+
     public func orWhereIN ( _ field: String, _ vals: [Any] ) throws -> MDBQuery {
         return try addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IN, try MDBValue.fromValue( vals ) )
+    }
+
+    public func orWhereNotIN ( _ field: String, _ vals: [Any] ) throws -> MDBQuery {
+        return try addWhereLine( .OR, field, WHERE_LINE_OPERATOR.NOT_IN, try MDBValue.fromValue( vals ) )
     }
 
     public func andWhere ( _ field: String, _ value: Any ) throws -> MDBQuery {

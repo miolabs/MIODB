@@ -30,6 +30,8 @@ public enum WHERE_OPERATOR: String {
 }
 
 public protocol MDBWhereString {
+    var where_op:WHERE_OPERATOR { get set }
+
     func raw ( firstLine: Bool ) -> String
 }
 
@@ -59,8 +61,12 @@ public class MDBWhere {
 
 
 public class MDBWhereGroup : MDBWhereString {
-    public var where_op: WHERE_OPERATOR = .AND
     public var where_fields: MDBWhere = MDBWhere( )
+    
+    public var where_op: WHERE_OPERATOR {
+        get { return where_fields.lines.first?.where_op ?? .AND }
+        set { }
+    }
     
     public func raw ( firstLine: Bool ) -> String {
         return (firstLine ? "" : "\(where_op) ") + "(" + where_fields.raw( ) + ")"

@@ -19,13 +19,13 @@ class TestDBHelper: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
     
-    func testValue ( ) {
-        XCTAssertTrue( MDBValue.fromValue(1).value == "1", "1" )
-        XCTAssertTrue( MDBValue.fromValue(true).value == "TRUE", "true" )
-        XCTAssertTrue( MDBValue.fromValue(nil).value == "NULL", "NULL" )
-        XCTAssertTrue( MDBValue.fromValue("hello").value == "'hello'", "'hello'" )
-        XCTAssertTrue( MDBValue.fromValue([10,"hello",true]).value == "(10,'hello',TRUE)", "[10,'hello',true]" )
-        XCTAssertTrue( MDBValue.fromValue("don't put damn \' or we have to scape the '").value == "'don''t put damn '' or we have to scape the '''", "'don''t put damn '' or we have to scape the '''" )
+    func testValue ( ) throws {
+        XCTAssertTrue( try MDBValue.fromValue(1).value == "1", "1" )
+        XCTAssertTrue( try MDBValue.fromValue(true).value == "TRUE", "true" )
+        XCTAssertTrue( try MDBValue.fromValue(nil).value == "NULL", "NULL" )
+        XCTAssertTrue( try MDBValue.fromValue("hello").value == "'hello'", "'hello'" )
+        XCTAssertTrue( try MDBValue.fromValue([10,"hello",true]).value == "(10,'hello',TRUE)", "[10,'hello',true]" )
+        XCTAssertTrue( try MDBValue.fromValue("don't put damn \' or we have to scape the '").value == "'don''t put damn '' or we have to scape the '''", "'don''t put damn '' or we have to scape the '''" )
     }
     
 
@@ -75,12 +75,12 @@ class TestDBHelper: XCTestCase {
 
 
     func testInsert ( ) throws {
-        let query = MDBQuery( "product" ).insert( [ "modifier": 10, "str": "Hello" ] )
+        let query = try MDBQuery( "product" ).insert( [ "modifier": 10, "str": "Hello" ] )
         let query_str = query.rawQuery( ) ;
         
         XCTAssert( query_str == "INSERT INTO \"product\" (\"modifier\",\"str\") VALUES (10,'Hello')", query_str )
 
-        _ = query.mergeValues( [ "modifier": 15, "extra": "world" ] )
+        _ = try query.mergeValues( [ "modifier": 15, "extra": "world" ] )
         let query2_str = query.rawQuery()
         
         XCTAssert( query2_str == "INSERT INTO \"product\" (\"extra\",\"modifier\",\"str\") VALUES ('world',15,'Hello')", query2_str )
@@ -89,19 +89,19 @@ class TestDBHelper: XCTestCase {
 
     
     func testUpdate ( ) throws {
-        let query = MDBQuery( "product" ).update( [ "modifier": 10.5, "str": "Hello" ] ).rawQuery( ) ;
+        let query = try MDBQuery( "product" ).update( [ "modifier": 10.5, "str": "Hello" ] ).rawQuery( ) ;
         
         XCTAssert( query == "UPDATE \"product\" SET \"modifier\"=10.5,\"str\"='Hello'", query )
     }
 
     
     func testSelectWhere ( ) throws {
-        let query = MDBQuery( "product" ).select( ).andWhere("name", .LT, "hello world").rawQuery( ) ;
+        let query = try MDBQuery( "product" ).select( ).andWhere("name", .LT, "hello world").rawQuery( ) ;
         
         XCTAssert( query == "SELECT * FROM \"product\" WHERE \"name\" < 'hello world'", query )
 
 
-        let query2 = MDBQuery( "product" ).select( )
+        let query2 = try MDBQuery( "product" ).select( )
                                          .orWhere("name", .LT, "hello world")
                                          .orWhere("price", .GE, 15 )
                                          .rawQuery( ) ;
@@ -109,7 +109,7 @@ class TestDBHelper: XCTestCase {
         XCTAssert( query2 == "SELECT * FROM \"product\" WHERE \"name\" < 'hello world' OR \"price\" >= 15", query2 )
 
         
-        let query2_1 = MDBQuery( "product" ).select( )
+        let query2_1 = try MDBQuery( "product" ).select( )
                                          .orWhere("name", .LT, "hello world")
                                          .orWhere("price", .GE, 15 )
                                             .limit( 10 )
@@ -121,7 +121,7 @@ class TestDBHelper: XCTestCase {
 
         
         
-        let query3 = MDBQuery( "product" ).select( )
+        let query3 = try MDBQuery( "product" ).select( )
                                            .beginGroup()
                                              .orWhere("name", .LT, "hello world")
                                              .orWhere("price", .GE, 15 )
@@ -134,7 +134,7 @@ class TestDBHelper: XCTestCase {
         XCTAssert( query3 == "SELECT * FROM \"product\" WHERE (\"name\" < 'hello world' OR \"price\" >= 15) AND (\"max\" = 1234)", query3 )
 
         
-        let query3_1 = MDBQuery( "product" ).select( )
+        let query3_1 = try MDBQuery( "product" ).select( )
                                            .beginGroup()
                                                .beginGroup()
                                                  .orWhere("name", .LT, "hello world")
@@ -149,7 +149,7 @@ class TestDBHelper: XCTestCase {
         XCTAssert( query3_1 == "SELECT * FROM \"product\" WHERE ((\"name\" < 'hello world' OR \"price\" >= 15) AND (\"max\" = 1234))", query3_1 )
 
         
-        let query3_2 = MDBQuery( "product" ).select( )
+        let query3_2 = try MDBQuery( "product" ).select( )
                                            .beginGroup()
                                              .orWhere("name", .LT, "hello world")
                                              .orWhere("price", .GE, 15 )
@@ -160,7 +160,7 @@ class TestDBHelper: XCTestCase {
         XCTAssert( query3_2 == "SELECT * FROM \"product\" WHERE (\"name\" < 'hello world' OR \"price\" >= 15) AND \"max\" = 1234", query3_2 )
 
         
-        let query4 = MDBQuery( "product" ).select( )
+        let query4 = try MDBQuery( "product" ).select( )
                                          .beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
@@ -179,7 +179,7 @@ class TestDBHelper: XCTestCase {
     
     
     func testInsertWhere ( ) throws {
-        let query = MDBQuery( "product" ).beginGroup()
+        let query = try MDBQuery( "product" ).beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
                                          .endGroup()
@@ -191,7 +191,7 @@ class TestDBHelper: XCTestCase {
 
     
     func testInsertReturning ( ) throws {
-        let query = MDBQuery( "product" ).andWhere("price", 15 )
+        let query = try MDBQuery( "product" ).andWhere("price", 15 )
                                          .returning( "name", "price" )
                                          .insert( [ "modifier": 10, "str": "Hello" ] )
         let query_str = query.rawQuery( ) ;
@@ -201,7 +201,7 @@ class TestDBHelper: XCTestCase {
 
     
     func testMultipleInsertWhere ( ) throws {
-        let query = MDBQuery( "product" ).beginGroup()
+        let query = try MDBQuery( "product" ).beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
                                          .endGroup()
@@ -213,7 +213,7 @@ class TestDBHelper: XCTestCase {
 
     
     func testUpdateWhere ( ) throws {
-        let query = MDBQuery( "product" ).beginGroup()
+        let query = try MDBQuery( "product" ).beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
                                          .endGroup()
@@ -256,4 +256,27 @@ class TestDBHelper: XCTestCase {
         XCTAssert( query == "SELECT * FROM \"product\" INNER JOIN \"modifier\" ON \"modifier\".\"id\" = \"prod\"", query )
     }
 
+    
+    func testGroups ( ) throws {
+        let place_entities = ["A","B"]
+        let device_entities = ["C","D"]
+        let sync_id = 15
+        let app_id = "APP_ID"
+        let query = try MDBQuery( "product" ).select( )
+                    .andWhere( "syncID", .GT, sync_id )
+                    .beginGroup()
+                       .andWhereIN( "classname", place_entities )
+                       .beginGroup()
+                         .orWhereIN( "classname", device_entities )
+                         .andWhere( "appID", app_id )
+                       .endGroup()
+                    .endGroup()
+                    .orderBy("syncID", .ASC)
+                    .limit( 100 ).rawQuery( )
+        
+        // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
+        XCTAssert( query == "SELECT * FROM \"product\" WHERE \"syncID\" > 15 AND (\"classname\" IN ('A','B') OR (\"classname\" IN ('C','D') AND \"appID\" = 'APP_ID')) ORDER BY \"syncID\" ASC LIMIT 100", query )
+    }
+
+    
 }

@@ -389,7 +389,7 @@ public class MDBQuery {
         return (parts.filter{ $0 != nil && $0 != "" } as! [String]).joined(separator: " " )
     }
     
-    func valuesRaw( ) -> String {
+    public func valuesRaw( ) -> String {
         var key_eq_values: [String] = []
 
         for (key,value) in sortedValues() {

@@ -21,6 +21,7 @@ public enum WHERE_LINE_OPERATOR: String {
     case IS_NOT = "IS NOT"
     case LIKE = "LIKE"
     case ILIKE = "ILIKE"
+    case JSON_EXISTS_IN = "?|"
     case RAW = ""
 }
 

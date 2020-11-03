@@ -16,6 +16,7 @@ public enum QUERY_TYPE
     case MULTI_INSERT
     case UPDATE
     case DELETE
+    case UPSERT
 }
 
 
@@ -70,6 +71,7 @@ public class MDBQuery {
     var _offset: Int = 0
     var order: [ OrderBy ] = []
     var joins: [ Join ] = []
+    var on_conflict: String = ""
 
     // DEPRECATED
 
@@ -162,6 +164,13 @@ public class MDBQuery {
     public func insert ( _ val: [String:Any?] ) throws -> MDBQuery {
         queryType = .INSERT
         self.values = try toValues( val )
+        return self
+    }
+    
+    public func upsert ( _ val: [String:Any?], _ conflict: String ) throws -> MDBQuery {
+        queryType = .UPSERT
+        self.values = try toValues( val )
+        self.on_conflict = conflict
         return self
     }
 
@@ -353,6 +362,20 @@ public class MDBQuery {
                                       , limitRaw( )
                                       , offsetRaw( )
                                       ] )
+
+            case .UPSERT:
+                let sorted_values = sortedValues()
+
+                return composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
+                                     , valuesFieldsRaw( sorted_values )
+                                     , "VALUES"
+                                     , valuesValuesRaw( sorted_values )
+                                     , returningRaw()
+                                     , " ON CONFLICT (" + on_conflict + ") DO UPDATE SET "
+                                     , valuesRaw()
+                                     // , " WHERE " + on_conflict + " = " + sorted_values[ on_conflict ]
+                                     ] )
+
             case .INSERT:
                  let sorted_values = sortedValues()
                  

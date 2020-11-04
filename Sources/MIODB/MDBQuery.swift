@@ -370,10 +370,10 @@ public class MDBQuery {
                                      , valuesFieldsRaw( sorted_values )
                                      , "VALUES"
                                      , valuesValuesRaw( sorted_values )
-                                     , returningRaw()
                                      , " ON CONFLICT (" + on_conflict + ") DO UPDATE SET "
                                      , valuesRaw()
                                      // , " WHERE " + on_conflict + " = " + sorted_values[ on_conflict ]
+                                     , returningRaw()
                                      ] )
 
             case .INSERT:

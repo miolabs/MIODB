@@ -366,7 +366,8 @@ public class MDBQuery {
             case .UPSERT:
                 let sorted_values = sortedValues()
 
-                return composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
+                return sorted_values.isEmpty ? ""
+                     : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
                                      , valuesFieldsRaw( sorted_values )
                                      , "VALUES"
                                      , valuesValuesRaw( sorted_values )
@@ -379,7 +380,8 @@ public class MDBQuery {
             case .INSERT:
                  let sorted_values = sortedValues()
                  
-                 return composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
+                 return sorted_values.isEmpty ? ""
+                      : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
                                       , valuesFieldsRaw( sorted_values )
                                       , "VALUES"
                                       , valuesValuesRaw( sorted_values )
@@ -388,7 +390,8 @@ public class MDBQuery {
                                       ] )
             case .MULTI_INSERT:
                  let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
-                 return composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
+                 return sorted_values.isEmpty ? ""
+                      : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
                                       , valuesFieldsRaw( sorted_values )
                                       , "VALUES"
                                       , multiValuesRaw( sorted_values )
@@ -396,7 +399,8 @@ public class MDBQuery {
                                       , returningRaw()
                                       ] )
             case .UPDATE:
-                 return composeQuery( [ "UPDATE " + MDBValue( fromTable: table ).value + " SET"
+                 return values.isEmpty ? ""
+                      : composeQuery( [ "UPDATE " + MDBValue( fromTable: table ).value + " SET"
                                       , valuesRaw( )
                                       , whereRaw( )
                                       , returningRaw()

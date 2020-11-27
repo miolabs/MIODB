@@ -618,14 +618,14 @@ public class MDBQuery {
         return self
     }
     
-    public func like(field:String, value:String?) -> MDBQuery {
-        if value == nil {
-            return self
-        }
-        
-        items.append(db.like(key: field, value: value!))
-        return self
-    }
+//    public func like(field:String, value:String?) -> MDBQuery {
+//        if value == nil {
+//            return self
+//        }
+//
+//        items.append(db.like(key: field, value: value!))
+//        return self
+//    }
     
     public func andOperator() -> MDBQuery {
         items.append("AND")

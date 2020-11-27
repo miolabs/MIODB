@@ -8,9 +8,6 @@
 
 import Foundation
 
-
-
-
 open class MDBConnection {
 
     public var poolID:String?

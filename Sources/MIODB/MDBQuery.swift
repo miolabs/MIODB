@@ -71,6 +71,7 @@ public class MDBQuery {
     var _offset: Int = 0
     var order: [ OrderBy ] = []
     var joins: [ Join ] = []
+    var _group_by: [ String ] = []
     var on_conflict: String = ""
 
     // DEPRECATED
@@ -284,6 +285,23 @@ public class MDBQuery {
     // ORDER BY
     //
     
+    @discardableResult
+    public func groupBy ( _ field: String, _ dir: ORDER_BY_DIRECTION = .ASC ) -> MDBQuery {
+        _group_by.append( field )
+        return self
+    }
+    
+    
+    func groupRaw ( ) -> String {
+        return _group_by.count > 0 ? "GROUP BY " + _group_by.joined(separator: ",") : ""
+    }
+    
+
+    //
+    // ORDER BY
+    //
+    
+    @discardableResult
     public func orderBy ( _ field: String, _ dir: ORDER_BY_DIRECTION = .ASC ) -> MDBQuery {
         order.append( OrderBy( field: MDBValue( fromTable: field ).value, dir: dir ) )
         return self
@@ -358,6 +376,7 @@ public class MDBQuery {
                  return composeQuery( [ "SELECT " + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
                                       , joinRaw( )
                                       , whereRaw( )
+                                      , groupRaw( )
                                       , orderRaw( )
                                       , limitRaw( )
                                       , offsetRaw( )

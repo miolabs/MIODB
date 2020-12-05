@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MIOCore
 
 public enum MDBValueError: Error {
     case couldNotConvert( _ value: Any )
@@ -43,45 +44,43 @@ public class MDBValue {
     }
     
     public init( _ v: Any?, isPartialString: Bool = false ) throws {
-        if v == nil || v is NSNull { value = "NULL"               }
-        else if v is [Any]         {
-                                     let list = try (v as! [Any]).map{ try MDBValue.fromValue( $0 ).value }
-            
-                                     value = "(" + list.joined( separator: "," ) + ")"
-                                   }
-        else if v is String        { value = isPartialString ?
-                                                "'%" + MDBValue.escape_string( v as! String ) + "%'"
-                                             :  "'"  + MDBValue.escape_string( v as! String ) + "'"  }
-        else if "\(type( of: v! ))" == "__NSCFBoolean" { value = (v as! Bool) ? "TRUE" : "FALSE" }
-        else if v is Int           { value = String(v as! Int)    }
-        else if v is Float         { value = String(v as! Float)  }
-        else if v is Double        { value = String(v as! Double) }
-        else if v is UUID          { value = "'" + (v as! UUID).uuidString + "'" }
-        else if v is Int8          { value = String(v as! Int8)   }
-        else if v is Int16         { value = String(v as! Int16)  }
-        else if v is Int32         { value = String(v as! Int32)  }
-        else if v is Int64         { value = String(v as! Int64)  }
-        else if v is Decimal       { value = NSDecimalNumber(decimal: (v as! Decimal)).stringValue }
-        else if v is Bool          { value = (v as! Bool) ? "TRUE" : "FALSE" }
-        else if v is Date          {
-                                     let df = DateFormatter( )
-                                     df.timeZone = TimeZone( secondsFromGMT: 0 )
-                                     df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss" ;
-                                     value = "'" + df.string( from: (v as! Date) ) + "'"
-                                   }
-        else {
-            var converted = false
-            
-            for c in MDBValue.convert {
-                if c.canConvert( v! ) {
-                    value = c.convert( v! )
-                    converted = true
-                    break
+
+        try autoreleasepool {
+            if v == nil || v is NSNull { value = "NULL"               }
+            else if v is [Any]         {
+                                         let list = try (v as! [Any]).map{ try MDBValue.fromValue( $0 ).value }
+                
+                                         value = "(" + list.joined( separator: "," ) + ")"
+                                       }
+            else if v is String        { value = isPartialString ?
+                                                    "'%" + MDBValue.escape_string( v as! String ) + "%'"
+                                                 :  "'"  + MDBValue.escape_string( v as! String ) + "'"  }
+            else if "\(type( of: v! ))" == "__NSCFBoolean" { value = (v as! Bool) ? "TRUE" : "FALSE" }
+            else if v is Int           { value = String(v as! Int)    }
+            else if v is Float         { value = String(v as! Float)  }
+            else if v is Double        { value = String(v as! Double) }
+            else if v is UUID          { value = "'" + (v as! UUID).uuidString + "'" }
+            else if v is Int8          { value = String(v as! Int8)   }
+            else if v is Int16         { value = String(v as! Int16)  }
+            else if v is Int32         { value = String(v as! Int32)  }
+            else if v is Int64         { value = String(v as! Int64)  }
+            else if v is Decimal       { value = NSDecimalNumber(decimal: (v as! Decimal)).stringValue }
+            else if v is Bool          { value = (v as! Bool) ? "TRUE" : "FALSE" }
+            else if v is Date          { value = "'" + MIOCoreDateTDateTimeFormatter().string( from: (v as! Date) ) + "'" }
+            else {
+                var converted = false
+                
+                for c in MDBValue.convert {
+                    if c.canConvert( v! ) {
+                        value = c.convert( v! )
+                        converted = true
+                        break
+                    }
                 }
-            }
-            
-            if !converted {
-                throw MDBValueError.couldNotConvert( v! )
+                
+                if !converted {
+                    throw MDBValueError.couldNotConvert( v! )
+                }
             }
         }
     }
@@ -107,10 +106,14 @@ public class MDBValue {
     }
 
     private func checkAS ( _ field:String.SubSequence ) -> String {
-        let parts = field.components(separatedBy: " AS ")
         
-        return parts.count > 1 ?
-               formatField( parts.first! ) + " AS " + formatField( parts.last! )
+        var parts:[String]?
+        autoreleasepool {
+            parts = field.components(separatedBy: " AS ")
+        }
+                
+        return parts!.count > 1 ?
+               formatField( parts!.first! ) + " AS " + formatField( parts!.last! )
              : formatField( String( field ) )
     }
     

@@ -450,7 +450,7 @@ public class MDBQuery {
         #if testing
         return ( v == nil ? values : v! ).sorted { (v1,v2) in v1.key < v2.key }
         #else
-        return v ?? values
+        return (v ?? values).map { (key, value) in (key, value) }
         #endif
     }
     

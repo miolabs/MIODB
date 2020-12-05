@@ -447,7 +447,11 @@ public class MDBQuery {
 
     // Unfortunatelly dictionaries do not respect the declaration order, so we need to sorted them for testing
     func sortedValues ( _ v: MDBValues? = nil ) -> [(key:String,value:MDBValue)] {
+        #if testing
         return ( v == nil ? values : v! ).sorted { (v1,v2) in v1.key < v2.key }
+        #else
+        return v ?? values
+        #endif
     }
     
     func valuesFieldsRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {

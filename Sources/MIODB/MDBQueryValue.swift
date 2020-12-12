@@ -45,7 +45,7 @@ public class MDBValue {
     
     public init( _ v: Any?, isPartialString: Bool = false ) throws {
 
-        try autoreleasepool {
+        try MIOCoreAutoReleasePool {
             if v == nil || v is NSNull { value = "NULL"               }
             else if v is [Any]         {
                                          let list = try (v as! [Any]).map{ try MDBValue.fromValue( $0 ).value }
@@ -108,7 +108,7 @@ public class MDBValue {
     private func checkAS ( _ field:String.SubSequence ) -> String {
         
         var parts:[String]?
-        autoreleasepool {
+        MIOCoreAutoReleasePool {
             parts = field.components(separatedBy: " AS ")
         }
                 

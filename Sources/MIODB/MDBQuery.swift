@@ -464,9 +464,15 @@ public class MDBQuery {
 
     
     func multiValuesRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+        // THIS IS UGLY: During the migration it happens that some entities to have relations and other do not.
+        // When using a multi-insert, the ones that has relations makes "spaces to fill-in" for the other entities
+        func def_value ( col: String ) -> String {
+            return col.starts(with: "_relation") ? "''" : "null"
+        }
+        
         return  multiValues.map{ row in
-                                  "(" + sorted_values.map{ col in row[ col.key ]!.value }.joined(separator: "," ) + ")"
-                               }.joined(separator: ",")
+             "(" + sorted_values.map{ col in (row[ col.key ]?.value ?? def_value(col: col.key) ) }.joined(separator: "," ) + ")"
+           }.joined(separator: ",")
     }
 
     // DEPRECATED

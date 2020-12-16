@@ -138,6 +138,7 @@ public class MDBQuery {
     }
     
     
+    @discardableResult
     public func select ( _ args: Any... ) -> MDBQuery {
         for field in args {
             let select_field: MDBValue = field is MDBValue ? field as! MDBValue : MDBValue( fromTable: field as! String )
@@ -338,7 +339,7 @@ public class MDBQuery {
     
 
     
-    public func join( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil ) -> MDBQuery {
+    public func join ( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil ) -> MDBQuery {
         let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
         let to_table   = MDBValue( fromTable: to ).value
         let new_join   = Join( joinType: joinType, table: table, fromTable: from_table, toTable: to_table, asWhat: as_what )
@@ -354,7 +355,11 @@ public class MDBQuery {
         return joins.map{ $0.raw( ) }.joined( separator: " " )
     }
 
-    
+    public func property_alias ( _ relation_name: String ) -> String {
+        let join_already_done = joins.filter{ j in j.table == relation_name }
+        
+        return join_already_done.first?.asWhat! ?? relation_name
+    }
     
     
     public func mergeValues ( _ moreValues: [ String: Any? ] ) throws -> MDBQuery {

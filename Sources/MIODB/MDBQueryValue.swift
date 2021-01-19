@@ -59,7 +59,7 @@ public class MDBValue {
             else if v is Int           { value = String(v as! Int)    }
             else if v is Float         { value = String(v as! Float)  }
             else if v is Double        { value = String(v as! Double) }
-            else if v is UUID          { value = "'" + (v as! UUID).uuidString.uppercased()() + "'" }
+            else if v is UUID          { value = "'" + (v as! UUID).uuidString.uppercased() + "'" }
             else if v is Int8          { value = String(v as! Int8)   }
             else if v is Int16         { value = String(v as! Int16)  }
             else if v is Int32         { value = String(v as! Int32)  }

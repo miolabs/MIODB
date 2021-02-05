@@ -22,58 +22,52 @@ public class MDBManager {
     // Initialization
     private init() {}
 
+    let connectionQueue = DispatchQueue(label: "com.miolabs.connection.queue")
+    
     var connections: [String:MDBConnection] = [:]
     var pool: [String:[MIODB]] = [:]
 
     
     public func addConnection( _ connection: MDBConnection, forIdentifier poolID:String ) {
-        connections[ poolID ] = connection
+        connectionQueue.sync {
+            self.connections[ poolID ] = connection
+        }
+        
     }
-    
-//    public func addConnection(identifier:String, host:String?, port:Int32?, user:String?, password:String?, database:String?) -> MDBConnection {
-//        addConnection(identifier: identifier, host: host, port: port, user: user, password: password, database: database, userInfo: nil)
-//    }
-//
-//    public func addConnection(identifier:String, host:String?, port:Int32?, user:String?, password:String?, database:String?, userInfo:[String:Any]?) -> MDBConnection {
-//        var conn = MDBConnection()
-//        conn.host = host
-//        conn.port = port
-//        conn.user = user
-//        conn.password = password
-//        conn.database = database
-//        conn.userInfo = userInfo
-//
-//        connections[identifier] = conn
-//
-//        return conn
-//    }
-    
+        
     public func connection ( _ poolID: String ) throws -> MIODB {
-        if pool[ poolID ]?.count ?? 0 > 0 {
-            let conn = pool[ poolID ]!.first!
-            
-            pool[ poolID ]!.remove(at:0) // .dropFirst( )
-            
-            return conn
+        var conn:MIODB? = nil
+        
+        try connectionQueue.sync {
+        
+            if self.pool[ poolID ]?.count ?? 0 > 0 {
+                conn = pool[ poolID ]!.first!
+                
+                self.pool[ poolID ]!.remove(at:0) // .dropFirst( )
+            }
+            else {
+                guard let factory = self.connections[ poolID ] else {
+                    throw MDBError.invalidPoolID( poolID )
+                }
+                
+                conn = try factory.create( )
+                conn!.poolID = poolID
+            }
         }
         
-        guard let factory = connections[ poolID ] else {
-            throw MDBError.invalidPoolID( poolID )
-        }
-        
-        let conn = try factory.create( )
-        conn.poolID = poolID
-        
-        return conn
+        return conn!
     }
     
     
     public func release ( _ db: MIODB ) {
-        if let poolID = db.poolID {
+        connectionQueue.sync {
             
-            if pool[ poolID ] == nil { pool[ poolID ] = [] }
-            
-            pool[ poolID ]!.append( db )
+            if let poolID = db.poolID {
+                
+                if self.pool[ poolID ] == nil { self.pool[ poolID ] = [] }
+                
+                self.pool[ poolID ]!.append( db )
+            }
         }
     }
 }

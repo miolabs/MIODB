@@ -10,9 +10,9 @@ import Foundation
 
 open class MIODB: MDBConnection {
     public var connectionString:String?
-    // public var isInsideTransaction : Bool = false
     
-    var transactionQueryStrings : [String] = []
+//    public var isInsideTransaction : Bool = false
+//    var transactionQueryStrings : [String] = []
         
     open func connect() throws { }
     open func disconnect() { }
@@ -38,33 +38,34 @@ open class MIODB: MDBConnection {
         return query
     }
     
-//    open func like(key:String, value:String) -> String {
-//        return "\(key) LIKE '%\(value)%'"
-//    }
-    
-//    open func beginTransaction() throws {
+//    open func transactionBegin ( ) throws {
 //        if isInsideTransaction {
-//            throw MDBError.cantBeginTransactionWhileInsideTransaction
+//           throw MDBError.cantBeginTransactionWhileInsideTransaction
 //        }
 //
-//        try executeQueryString(MDBQuery.beginTransactionStament())
-//
 //        isInsideTransaction = true
+//        transactionQueryStrings.append( "begin transaction" )
 //    }
 //
-//    open func commitTransaction() throws {
-//        if isInsideTransaction == false {
-//            throw MDBError.cantEndTransactionWhileNotInsideTransaction
+//    open func transactionCommit ( ) throws {
+//        if !isInsideTransaction {
+//           throw MDBError.cantEndTransactionWhileNotInsideTransaction
 //        }
 //
 //        isInsideTransaction = false
+//        transactionQueryStrings.append( "commit" )
 //
-//        try executeQueryString(MDBQuery.commitTransactionStament())
-//        //_ = try executeQueryString(transactionQueryStrings.joined(separator: "; "))
-//        transactionQueryStrings.removeAll()
+//        try executeQueryString( transactionQueryStrings.joined(separator: ";") )
+//
+//        transactionQueryStrings = []
 //    }
 //
-//    open func pushQueryString(_ query : String) {
-//        transactionQueryStrings.append(query)
+//    open func transactionRollback ( ) throws {
+//        if !isInsideTransaction {
+//           throw MDBError.cantEndTransactionWhileNotInsideTransaction
+//        }
+//
+//        isInsideTransaction = false
+//        transactionQueryStrings = []
 //    }
 }

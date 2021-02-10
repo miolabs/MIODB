@@ -42,18 +42,37 @@ public enum JOIN_TYPE: String {
     case FULL  = "FULL"
 }
 
-struct Join {
+class Join {
     var joinType: JOIN_TYPE
     var table: String
     var fromTable: String
     var toTable: String
     var asWhat: String? = nil
     
+    init ( joinType: JOIN_TYPE, table: String, fromTable: String, toTable: String, asWhat: String? = nil ) {
+        self.joinType  = joinType
+        self.table     = table
+        self.fromTable = fromTable
+        self.toTable   = toTable
+        self.asWhat    = asWhat
+    }
+    
     func raw ( ) -> String {
         return "\(joinType) JOIN \"\(table)\"" + (asWhat != nil ? " AS \"\(asWhat!)\"" : "") + " ON \(fromTable) = \(toTable)"
     }
 }
 
+class JoinJSON: Join {
+    init ( joinType: JOIN_TYPE, table: String, json: String, toTable: String, asWhat: String? = nil ) {
+        super.init( joinType: joinType, table: table, fromTable: json, toTable: toTable, asWhat: asWhat )
+    }
+
+    override func raw ( ) -> String {
+        // join product on _relation__products::jsonb ? UPPER(product.id::text) as product_productmodifier;
+
+        return "\(joinType) JOIN \"\(table)\"" + (asWhat != nil ? " AS \"\(asWhat!)\"" : "") + " ON \(fromTable)::jsonb ? UPPER(\(toTable)::text)"
+    }
+}
 
 public class MDBQuery {
 
@@ -339,6 +358,7 @@ public class MDBQuery {
     
 
     
+    @discardableResult
     public func join ( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil ) -> MDBQuery {
         let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
         let to_table   = MDBValue( fromTable: to ).value
@@ -350,6 +370,20 @@ public class MDBQuery {
         }
         return self
     }
+
+    
+    @discardableResult
+    public func join ( table: String, json: String, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil ) -> MDBQuery {
+        let to_table   = MDBValue( fromTable: to ).value
+        let new_join   = JoinJSON( joinType: joinType, table: table, json: json, toTable: to_table, asWhat: as_what )
+        let join_already_done = joins.filter{ j in j.raw( ) == new_join.raw( ) }.count > 0
+        
+        if !join_already_done {
+          joins.append( new_join )
+        }
+        return self
+    }
+
     
     func joinRaw ( ) -> String {
         return joins.map{ $0.raw( ) }.joined( separator: " " )

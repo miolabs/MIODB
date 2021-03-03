@@ -234,9 +234,9 @@ public class MDBQuery {
         return self ;
     }
 
-    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> MDBQuery {
+    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> MDBQuery {
         whereCond( ).push( MDBWhereLine( where_op: where_op
-                                    , field: MDBValue(fromTable: field).value
+                                    , field: field is String ? MDBValue(fromTable: field as! String).value : (field as! MDBValue).value
                                     , op: op
                                     , value: try MDBValue.fromValue( value ).value ) )
         return self

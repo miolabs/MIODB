@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "MIOCore",
+        "repositoryURL": "https://github.com/miolabs/MIOCore.git",
+        "state": {
+          "branch": "master",
+          "revision": "288769ac025c0dc7dbd4d4eb5aea04319a674fc5",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}

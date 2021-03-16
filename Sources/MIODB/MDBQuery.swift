@@ -601,7 +601,7 @@ public class MDBQuery {
         queryString += " VALUES (" + insertValues.joined(separator: ",") + ")"
         let items = try db.executeQueryString(queryString + " RETURNING \(field)")! // as [[String:Any]]
                                 
-        return items[0][field]!
+        return items[0][field]! as Any
     }
 
     

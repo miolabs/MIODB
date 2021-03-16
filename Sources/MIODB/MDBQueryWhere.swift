@@ -23,6 +23,10 @@ public enum WHERE_LINE_OPERATOR: String {
     case ILIKE = "ILIKE"
     case JSON_EXISTS_IN = "?|"
     case RAW = ""
+    case BITWISE_AND = "&"
+    case BITWISE_OR = "|"
+    case BITWISE_XOR = "#"
+    case BITWISE_NOT = "~"
 }
 
 public enum WHERE_OPERATOR: String {

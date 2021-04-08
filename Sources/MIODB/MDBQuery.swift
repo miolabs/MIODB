@@ -300,6 +300,10 @@ public class MDBQuery {
         return try addWhereLine( .AND, field, op, value )
     }
 
+    public func orWhere ( _ field: String, _ value: Any ) throws -> MDBQuery {
+        return try addWhereLine( .OR, field, .EQ, value )
+    }
+    
     public func orWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) throws -> MDBQuery {
         return try addWhereLine( .OR, field, op, value )
     }

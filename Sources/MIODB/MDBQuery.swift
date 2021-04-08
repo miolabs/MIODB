@@ -17,6 +17,7 @@ public enum QUERY_TYPE
     case UPDATE
     case DELETE
     case UPSERT
+    case MULTI_UPSERT
 }
 
 
@@ -191,6 +192,13 @@ public class MDBQuery {
     public func upsert ( _ val: [String:Any?], _ conflict: String ) throws -> MDBQuery {
         queryType = .UPSERT
         self.values = try toValues( val )
+        self.on_conflict = conflict
+        return self
+    }
+
+    public func upsert ( _ val: [[String:Any?]], _ conflict: String ) throws -> MDBQuery {
+        queryType = .MULTI_UPSERT
+        self.multiValues = try val.map{ try toValues( $0 ) }
         self.on_conflict = conflict
         return self
     }
@@ -429,11 +437,22 @@ public class MDBQuery {
                                      , valuesFieldsRaw( sorted_values )
                                      , "VALUES"
                                      , valuesValuesRaw( sorted_values )
-                                     , " ON CONFLICT (" + on_conflict + ") DO UPDATE SET "
+                                     , "ON CONFLICT (" + on_conflict + ") DO UPDATE SET"
                                      , valuesRaw()
                                      // , " WHERE " + on_conflict + " = " + sorted_values[ on_conflict ]
                                      , returningRaw()
                                      ] )
+            case .MULTI_UPSERT:
+                 let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
+                 return sorted_values.isEmpty ? ""
+                      : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
+                                      , valuesFieldsRaw( sorted_values )
+                                      , "VALUES"
+                                      , multiValuesRaw( sorted_values )
+                                      , "ON CONFLICT (" + on_conflict + ") DO UPDATE SET"
+                                      , multiExcludedRaw( sorted_values )
+                                      , returningRaw()
+                                      ] )
 
             case .INSERT:
                  let sorted_values = sortedValues()
@@ -502,8 +521,8 @@ public class MDBQuery {
     }
 
     
-    func multiValuesRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
-        // THIS IS UGLY: During the migration it happens that some entities to have relations and other do not.
+    func multiValuesRaw ( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+        // THIS IS UGLY: During the migration it happens that some entities do have relations and other do not.
         // When using a multi-insert, the ones that has relations makes "spaces to fill-in" for the other entities
         func def_value ( col: String ) -> String {
             return col.starts(with: "_relation") ? "''" : "null"
@@ -513,6 +532,14 @@ public class MDBQuery {
              "(" + sorted_values.map{ col in (row[ col.key ]?.value ?? def_value(col: col.key) ) }.joined(separator: "," ) + ")"
            }.joined(separator: ",")
     }
+    
+    func multiExcludedRaw ( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+        let conflict_keys = Set( on_conflict.components(separatedBy: ",").map{ $0.trimmingCharacters(in: .whitespacesAndNewlines) } )
+        
+        return sorted_values.filter{ col in !conflict_keys.contains( col.key ) }
+                            .map{ col in ("\"\(col.key)\" = excluded.\"\(col.key)\"" ) }.joined(separator: ",")
+    }
+    
 
     // DEPRECATED
     public func join( table: String, fromTable: String, column: String, joinType: String = "INNER" ) -> MDBQuery {

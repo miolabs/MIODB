@@ -279,4 +279,17 @@ class TestDBHelper: XCTestCase {
     }
 
     
+    func testUpsertSimple ( ) throws {
+        let query = try MDBQuery( "product" ).upsert( [ "id": 1, "name": "patata" ], "id" ).rawQuery( ) ;
+        
+        // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
+        XCTAssert( query == "INSERT INTO \"product\" (\"id\",\"name\") VALUES (1,'patata') ON CONFLICT (id) DO UPDATE SET \"id\"=1,\"name\"='patata'", query )
+    }
+
+    func testUpsertMultiple ( ) throws {
+        let query = try MDBQuery( "product" ).upsert( [ [ "id": 1, "name": "patata" ], [ "id": 2, "name": "tomate" ] ], "id" ).rawQuery( ) ;
+        
+        // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
+        XCTAssert( query == "INSERT INTO \"product\" (\"id\",\"name\") VALUES (1,'patata'),(2,'tomate') ON CONFLICT (id) DO UPDATE SET \"name\" = excluded.\"name\"", query )
+    }
 }

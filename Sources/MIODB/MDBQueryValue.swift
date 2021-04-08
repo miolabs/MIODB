@@ -58,8 +58,8 @@ public class MDBValue {
                                          value = "(" + list.joined( separator: "," ) + ")"
                                        }
             else if v is String        { value = isPartialString ?
-                                                    "'%" + escape_string( v as! String ) + "%'"
-                                                 :  "'"  + escape_string( v as! String ) + "'"  }
+                                                    "'%" + MDBValue.escape_string( v as! String ) + "%'"
+                                                 :  "'"  + MDBValue.escape_string( v as! String ) + "'"  }
             else if "\(type( of: v! ))" == "__NSCFBoolean" { value = (v as! Bool) ? "TRUE" : "FALSE" }
             else if v is Int           { value = String(v as! Int)    }
             else if v is Float         { value = String(v as! Float)  }

@@ -47,13 +47,19 @@ public class MDBValue {
        try MIOCoreAutoReleasePool {
             if v == nil || v is NSNull { value = "NULL" }
             else if v is [Any]         {
-                                         let list = try (v as! [Any]).map{ try MDBValue.fromValue( $0 ).value }
+                                         //let list = try (v as! [Any]).map{ try MDBValue.fromValue( $0 ).value }
+                                        var list:[String] = []
+                                        let array = v as! [Any]
+                                        for a in array {
+                                            let it = try MDBValue.fromValue(a)
+                                            list.append(it.value)
+                                        }
                 
                                          value = "(" + list.joined( separator: "," ) + ")"
                                        }
             else if v is String        { value = isPartialString ?
-                                                    "'%" + MDBValue.escape_string( v as! String ) + "%'"
-                                                 :  "'"  + MDBValue.escape_string( v as! String ) + "'"  }
+                                                    "'%" + escape_string( v as! String ) + "%'"
+                                                 :  "'"  + escape_string( v as! String ) + "'"  }
             else if "\(type( of: v! ))" == "__NSCFBoolean" { value = (v as! Bool) ? "TRUE" : "FALSE" }
             else if v is Int           { value = String(v as! Int)    }
             else if v is Float         { value = String(v as! Float)  }

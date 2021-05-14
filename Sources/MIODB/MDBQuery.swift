@@ -87,8 +87,8 @@ public class MDBQuery {
     var _whereCond: MDBWhereGroup? = nil
     var whereStack: [ MDBWhereGroup ] = []
     var _returning: [String] = []
-    var _limit: Int = 0
-    var _offset: Int = 0
+    var _limit: Int32 = 0
+    var _offset: Int32 = 0
     var order: [ OrderBy ] = []
     var joins: [ Join ] = []
     var _group_by: [ String ] = []
@@ -348,7 +348,7 @@ public class MDBQuery {
     // LIMIT
     //
 
-    public func limit ( _ value: Int ) -> MDBQuery
+    public func limit ( _ value: Int32 ) -> MDBQuery
     {
         // DEPRECATED
         let rowsString = String(value)
@@ -365,7 +365,7 @@ public class MDBQuery {
     // OFFSET
     //
 
-    public func offset ( _ value: Int ) -> MDBQuery { _offset = value ; return self }
+    public func offset ( _ value: Int32 ) -> MDBQuery { _offset = value ; return self }
     func offsetRaw ( ) -> String { return _offset > 0 ? "OFFSET " + String( _offset ) : "" }
     
 

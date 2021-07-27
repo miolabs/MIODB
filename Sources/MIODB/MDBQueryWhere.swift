@@ -55,8 +55,8 @@ public struct MDBWhereLine : MDBWhereString {
 public class MDBWhere {
     public var lines: [ MDBWhereString ] = []
     
-    public func raw ( ) -> String {
-        return lines.enumerated().map{ (index,line) in line.raw( firstLine: index == 0 ) }.joined( separator: " " )
+    public func raw ( first_line_hides_operator: Bool = true ) -> String {
+        return lines.enumerated().map{ (index,line) in line.raw( firstLine: first_line_hides_operator && index == 0 ) }.joined( separator: " " )
     }
     
     func push ( _ cond: MDBWhereString ) {
@@ -77,8 +77,49 @@ public class MDBWhereGroup : MDBWhereString {
         return (firstLine ? "" : "\(where_op) ") + "(" + where_fields.raw( ) + ")"
     }
     
-    public func raw ( ) -> String {
-        return where_fields.raw()
+    public func raw ( first_line_hides_operator: Bool = true ) -> String {
+        return where_fields.raw( first_line_hides_operator: first_line_hides_operator )
     }
 
+}
+
+
+public class MDBQueryWhere {
+    var _whereCond: MDBWhereGroup? = nil
+    var whereStack: [ MDBWhereGroup ] = []
+    
+    //
+    // WHERE
+    //
+    
+    private func whereCond ( ) -> MDBWhere {
+        if whereStack.isEmpty {
+            _whereCond = MDBWhereGroup( )
+            whereStack.append( _whereCond! )
+        }
+        
+        return whereStack.last!.where_fields
+    }
+    
+    @discardableResult
+    public func begin_group ( ) -> MDBQueryWhere {
+        let grp = MDBWhereGroup( )
+        whereCond( ).push( grp )
+        whereStack.append( grp )
+        
+        return self ;
+    }
+
+    @discardableResult
+    public func end_group ( ) -> MDBQueryWhere {
+        whereStack.removeLast()
+        return self ;
+    }
+
+    public func add_where_line( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws {
+        whereCond( ).push( MDBWhereLine( where_op: where_op
+                                    , field: field is String ? MDBValue(fromTable: field as! String).value : (field as! MDBValue).value
+                                    , op: op
+                                    , value: try MDBValue.fromValue( value ).value ) )
+    }
 }

@@ -36,46 +36,8 @@ struct OrderBy {
     }
 }
 
-public enum JOIN_TYPE: String {
-    case INNER = "INNER"
-    case LEFT  = "LEFT"
-    case RIGHT = "RIGHT"
-    case FULL  = "FULL"
-}
 
-class Join {
-    var joinType: JOIN_TYPE
-    var table: String
-    var fromTable: String
-    var toTable: String
-    var asWhat: String? = nil
-    
-    init ( joinType: JOIN_TYPE, table: String, fromTable: String, toTable: String, asWhat: String? = nil ) {
-        self.joinType  = joinType
-        self.table     = table
-        self.fromTable = fromTable
-        self.toTable   = toTable
-        self.asWhat    = asWhat
-    }
-    
-    func raw ( ) -> String {
-        return "\(joinType) JOIN \"\(table)\"" + (asWhat != nil ? " AS \"\(asWhat!)\"" : "") + " ON \(fromTable) = \(toTable)"
-    }
-}
-
-class JoinJSON: Join {
-    init ( joinType: JOIN_TYPE, table: String, json: String, toTable: String, asWhat: String? = nil ) {
-        super.init( joinType: joinType, table: table, fromTable: json, toTable: toTable, asWhat: asWhat )
-    }
-
-    override func raw ( ) -> String {
-        // join product on _relation__products::jsonb ? UPPER(product.id::text) as product_productmodifier;
-
-        return "\(joinType) JOIN \"\(table)\"" + (asWhat != nil ? " AS \"\(asWhat!)\"" : "") + " ON \(fromTable)::jsonb ? UPPER(\(toTable)::text)"
-    }
-}
-
-public class MDBQuery {
+public class MDBQuery: MDBQueryWhere {
 
     // In some cases like "WHERE IN ()" we can predict the query will not return values
     public var willBeEmpty: Bool = false
@@ -84,8 +46,6 @@ public class MDBQuery {
     var _selectFields: [ String ] = []
     public var values: MDBValues = [:]
     public var multiValues: [MDBValues] = []
-    var _whereCond: MDBWhereGroup? = nil
-    var whereStack: [ MDBWhereGroup ] = []
     var _returning: [String] = []
     var _limit: Int32 = 0
     var _offset: Int32 = 0
@@ -220,37 +180,27 @@ public class MDBQuery {
     // WHERE
     //
     
-    private func whereCond ( ) -> MDBWhere {
-        if whereStack.isEmpty {
-            _whereCond = MDBWhereGroup( )
-            whereStack.append( _whereCond! )
-        }
-        
-        return whereStack.last!.where_fields
-    }
-    
     public func beginGroup ( ) -> MDBQuery {
-        let grp = MDBWhereGroup( )
-        whereCond( ).push( grp )
-        whereStack.append( grp )
-        
-        return self ;
-    }
-
-    public func endGroup ( ) -> MDBQuery {
-        whereStack.removeLast()
-        return self ;
-    }
-
-    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> MDBQuery {
-        whereCond( ).push( MDBWhereLine( where_op: where_op
-                                    , field: field is String ? MDBValue(fromTable: field as! String).value : (field as! MDBValue).value
-                                    , op: op
-                                    , value: try MDBValue.fromValue( value ).value ) )
+        super.begin_group()
         return self
     }
 
-               
+    public func endGroup ( ) -> MDBQuery {
+        super.end_group()
+
+        return self ;
+    }
+    
+    func whereRaw ( ) -> String {
+        return _whereCond != nil ? "WHERE " + _whereCond!.raw( ) : ""
+    }
+
+    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> MDBQuery {
+        try super.add_where_line( where_op, field, op, value )
+
+        return self
+    }
+
     public func andWhereRaw ( _ raw: String ) -> MDBQuery {
         return try! addWhereLine( .AND, "", WHERE_LINE_OPERATOR.RAW, MDBValue.init(raw: raw) )
     }
@@ -306,11 +256,6 @@ public class MDBQuery {
     
     public func orWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) throws -> MDBQuery {
         return try addWhereLine( .OR, field, op, value )
-    }
-
-    
-    func whereRaw ( ) -> String {
-        return _whereCond != nil ? "WHERE " + _whereCond!.raw( ) : ""
     }
 
     //
@@ -371,7 +316,7 @@ public class MDBQuery {
 
     
     @discardableResult
-    public func join ( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil ) -> MDBQuery {
+    public func join ( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil, _ cb: @escaping ( Join ) throws -> Void = { _ in } ) throws -> MDBQuery {
         let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
         let to_table   = MDBValue( fromTable: to ).value
         let new_join   = Join( joinType: joinType, table: table, fromTable: from_table, toTable: to_table, asWhat: as_what )
@@ -380,6 +325,9 @@ public class MDBQuery {
         if !join_already_done {
           joins.append( new_join )
         }
+        
+        try cb( new_join )
+        
         return self
     }
 

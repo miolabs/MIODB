@@ -225,14 +225,14 @@ class TestDBHelper: XCTestCase {
     
     
     func testJoins ( ) throws {
-        let query = MDBQuery( "product" ).join( table: "modifier", to: "product.productModifier" )
+        let query = try MDBQuery( "product" ).join( table: "modifier", to: "product.productModifier" )
                                          .select( ).rawQuery( ) ;
         
         // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
         XCTAssert( query == "SELECT * FROM \"product\" INNER JOIN \"modifier\" ON \"modifier\".\"id\" = \"product\".\"productModifier\"", query )
 
 
-        let query2 = MDBQuery( "product" ).join( table: "modifier", from: "modifier.identifier", to: "product.productModifier", joinType: .FULL )
+        let query2 = try MDBQuery( "product" ).join( table: "modifier", from: "modifier.identifier", to: "product.productModifier", joinType: .FULL )
                                          .select( ).rawQuery( ) ;
         
         XCTAssert( query2 == "SELECT * FROM \"product\" FULL JOIN \"modifier\" ON \"modifier\".\"identifier\" = \"product\".\"productModifier\"", query2 )
@@ -250,7 +250,7 @@ class TestDBHelper: XCTestCase {
 
     
     func testDoubleJoin ( ) throws {
-        let query = MDBQuery( "product" ).select( ).join(table: "modifier", to: "prod").join(table: "modifier", to: "prod").rawQuery( ) ;
+        let query = try MDBQuery( "product" ).select( ).join(table: "modifier", to: "prod").join(table: "modifier", to: "prod").rawQuery( ) ;
         
         // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
         XCTAssert( query == "SELECT * FROM \"product\" INNER JOIN \"modifier\" ON \"modifier\".\"id\" = \"prod\"", query )
@@ -292,4 +292,13 @@ class TestDBHelper: XCTestCase {
         // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
         XCTAssert( query == "INSERT INTO \"product\" (\"id\",\"name\") VALUES (1,'patata'),(2,'tomate') ON CONFLICT (id) DO UPDATE SET \"name\" = excluded.\"name\"", query )
     }
+    
+    
+    func testBitwise ( ) throws {
+        let query = try MDBQuery( "product" ).select( ).addWhereLine(.AND, MDBValue( raw: "field & 1"), .EQ, 0 ).rawQuery( ) ;
+        
+        XCTAssert( query == "SELECT * FROM \"product\" WHERE field & 1 = 0", query )
+    }
+
+
 }

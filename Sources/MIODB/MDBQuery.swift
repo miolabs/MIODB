@@ -53,6 +53,8 @@ public class MDBQuery: MDBQueryWhere {
     var joins: [ Join ] = []
     var _group_by: [ String ] = []
     var on_conflict: String = ""
+    public var _alias: String? = nil
+
 
     // DEPRECATED
 
@@ -93,6 +95,9 @@ public class MDBQuery: MDBQueryWhere {
     public init( _ table: String ) {
         self.table = table
     }
+    
+    public func alias ( _ alias_name: String ) { _alias = alias_name }
+    func aliasRaw ( ) -> String { return _alias == nil ? "" : "AS \(_alias!)" }
     
 //    public func select ( _ fields: String = "*" ) -> MDBQuery {
 //        queryType = .SELECT
@@ -373,6 +378,7 @@ public class MDBQuery: MDBQueryWhere {
                  return queryString
             case .SELECT:
                  return composeQuery( [ "SELECT " + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
+                                      , aliasRaw( )
                                       , joinRaw( )
                                       , whereRaw( )
                                       , groupRaw( )

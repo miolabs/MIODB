@@ -437,6 +437,7 @@ public class MDBQuery: MDBQueryWhere {
             case .DELETE:
                  return composeQuery( [ "DELETE FROM " + MDBValue( fromTable: table ).value
                                       , whereRaw( )
+                                      , returningRaw()
                                       ] )
         }
     }

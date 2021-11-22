@@ -33,10 +33,10 @@ open class MIODB: MDBConnection {
     }
     
     // Build query methods
-    open func query() -> MDBQuery {
-        let query = MDBQuery(db: self)
-        return query
-    }
+//    open func query() -> MDBQuery {
+//        let query = MDBQuery(db: self)
+//        return query
+//    }
     
 //    open func transactionBegin ( ) throws {
 //        if isInsideTransaction {

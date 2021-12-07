@@ -108,6 +108,10 @@ public class MDBValue {
                          .joined(separator: ",") as String
     }
 
+    public init( fromField: String ) {
+        value = "\"\(fromField)\""
+    }
+
     public init( raw: String ) {
         value = raw
     }

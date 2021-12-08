@@ -342,10 +342,10 @@ public class MDBQuery: MDBQueryWhere {
 
             case .UPSERT:
                 let sorted_values = sortedValues()
-                let table = MDBValue( fromTable: table ).value
+                let t = MDBValue( fromTable: table ).value
 
                 return sorted_values.isEmpty ? ""
-                     : delegate?.upsert( table: table, values: sorted_values, conflict: on_conflict, returning: _returning ) ??
+                     : delegate?.upsert( table: t, values: sorted_values, conflict: on_conflict, returning: _returning ) ??
                        composeQuery( [ "INSERT INTO " + table
                                      , valuesFieldsRaw( sorted_values )
                                      , "VALUES"

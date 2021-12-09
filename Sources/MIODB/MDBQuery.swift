@@ -346,7 +346,7 @@ public class MDBQuery: MDBQueryWhere {
 
                 return sorted_values.isEmpty ? ""
                      : delegate?.upsert( table: t, values: sorted_values, conflict: on_conflict, returning: _returning ) ??
-                       composeQuery( [ "INSERT INTO " + table
+                       composeQuery( [ "INSERT INTO " + t
                                      , valuesFieldsRaw( sorted_values )
                                      , "VALUES"
                                      , valuesValuesRaw( sorted_values )

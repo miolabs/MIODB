@@ -18,6 +18,8 @@ open class MIODB: MDBConnection {
     open func disconnect() { }
     open func changeScheme( _ schema: String? ) throws { }
 
+    deinit { disconnect() }
+    
     @discardableResult open func fetch ( _ table: String, _ id: String ) throws -> [String : Any]? {
         let entity = try execute( MDBQuery( table ).select().andWhere( "id", .EQ, id ) )!
 

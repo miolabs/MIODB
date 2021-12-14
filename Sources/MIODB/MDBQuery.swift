@@ -343,11 +343,11 @@ public class MDBQuery: MDBQueryWhere {
 
             case .UPSERT:
                 let sorted_values = sortedValues()
-                let table = MDBValue( fromTable: table ).value
+                let t = MDBValue( fromTable: table ).value
 
                 return sorted_values.isEmpty ? ""
-                     : delegate?.upsert( table: table, values: sorted_values, conflict: on_conflict, returning: _returning ) ??
-                       composeQuery( [ "INSERT INTO " + table
+                     : delegate?.upsert( table: t, values: sorted_values, conflict: on_conflict, returning: _returning ) ??
+                       composeQuery( [ "INSERT INTO " + t
                                      , valuesFieldsRaw( sorted_values )
                                      , "VALUES"
                                      , valuesValuesRaw( sorted_values )
@@ -399,6 +399,7 @@ public class MDBQuery: MDBQueryWhere {
             case .DELETE:
                  return composeQuery( [ "DELETE FROM " + MDBValue( fromTable: table ).value
                                       , whereRaw( )
+                                      , returningRaw()
                                       ] )
         }
     }

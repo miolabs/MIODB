@@ -39,6 +39,7 @@ struct OrderBy {
 public protocol MDBQueryProtocol
 {
     func upsert( table: String, values: [(key:String,value:MDBValue)], conflict: String, returning: [String] ) -> String?
+    // func multi_upsert( table: String, keys: [(key:String,value:MDBValue)], values: [[(key:String,value:MDBValue)]], conflict: String, returning: [String] ) -> String?
 }
 
 
@@ -357,6 +358,7 @@ public class MDBQuery: MDBQueryWhere {
             case .MULTI_UPSERT:
                  let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
                  return sorted_values.isEmpty ? ""
+//                      : delegate?.multi_upsert( table: table, keys: sorted_values, values: multiValuesKeyValue( sorted_values ), conflict: on_conflict, returning: _returning ) ??
                       : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
                                       , valuesFieldsRaw( sorted_values )
                                       , "VALUES"
@@ -432,6 +434,19 @@ public class MDBQuery: MDBQueryWhere {
         return "(" + (sorted_values.map{ $0.value.value }).joined(separator: ",") + ")"
     }
 
+//
+//    func multiValuesKeyValue ( _ sorted_values: [(key:String,value:MDBValue)] ) -> [[(key:String,value:Any)]] {
+//        // THIS IS UGLY: During the migration it happens that some entities do have relations and other do not.
+//        // When using a multi-insert, the ones that has relations makes "spaces to fill-in" for the other entities
+//        func def_value ( col: String ) -> String {
+//            return col.starts(with: "_relation") ? "''" : "null"
+//        }
+//        
+//        return  multiValues.map{ row in
+//            sorted_values.map{ col in (key: col.key, value:(row[ col.key ]?.value ?? def_value(col: col.key) )) }
+//           }
+//    }
+//
     
     func multiValuesRaw ( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
         // THIS IS UGLY: During the migration it happens that some entities do have relations and other do not.

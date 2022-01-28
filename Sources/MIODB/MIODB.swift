@@ -27,12 +27,17 @@ open class MIODB: MDBConnection {
     }
     
     @discardableResult open func execute(_ query: MDBQuery ) throws -> [[String : Any]]? {
-        return try executeQueryString( query.rawQuery() )
+        let result = try executeQueryString( query.rawQuery() )
+        startIdleTimer()
+        return result
     }
 
     @discardableResult open func executeQueryString(_ query:String) throws -> [[String : Any]]? {
         return []
     }
+    
+    open func queryWillExecute() { stopIdleTimer() }
+    open func queryDidExecute() { startIdleTimer() }
     
     // Build query methods
 //    open func query() -> MDBQuery {

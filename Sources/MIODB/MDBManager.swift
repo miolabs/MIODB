@@ -20,7 +20,9 @@ public class MDBManager {
     public static let shared = MDBManager()
         
     // Initialization
-    private init() {}
+    private init() {
+        startIdleTimer()
+    }
 
     let connectionQueue = DispatchQueue(label: "com.miolabs.connection.queue")
     
@@ -68,6 +70,40 @@ public class MDBManager {
                 
                 self.pool[ poolID ]!.append( db )
             }
+        }
+    }
+    
+    let timerQueue = DispatchQueue(label: "idle-pool-timer")
+    
+    func startIdleTimer() {
+        
+        timerQueue.async {
+            
+            Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+                
+                self.connectionQueue.sync {
+                
+                    var new_pool:[String:[MIODB]] = [:]
+                    
+                    for (poolID, connections) in self.pool {
+                                              
+                        var new_conns:[MIODB] = []
+                        for db in connections {
+                            db.updateIdleTime(seconds: 60)
+                            if db.idleTimeInSeconds > (60 * 10) {
+                                db.disconnect()
+                            }
+                            else {
+                                new_conns.append(db)
+                            }
+                        }
+                        new_pool [poolID ] = new_conns
+                    }
+                    
+                    self.pool = new_pool
+                }
+            }
+            RunLoop.current.run()
         }
     }
 }

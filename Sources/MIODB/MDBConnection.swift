@@ -19,6 +19,9 @@ open class MDBConnection {
     public var database:String?
     public var scheme:String?
     public var userInfo:[String:Any]?
+        
+    var isExecuting = false
+    var idleTimeInSeconds:Int = 0
     
     public init ( host:String? = nil
          , port:Int32? = nil
@@ -49,4 +52,19 @@ open class MDBConnection {
      }
     
     open func create ( ) throws -> MIODB { throw MDBError.createNotImplemented( ) }
+    
+    open func startIdleTimer ( ) {
+        isExecuting = false
+        idleTimeInSeconds = 0
+    }
+    
+    open func stopIdleTimer ( ) {
+        isExecuting = true
+        idleTimeInSeconds = 0
+    }
+    
+    open func updateIdleTime(seconds:Int) {
+        if isExecuting { return }
+        idleTimeInSeconds += seconds
+    }
 }

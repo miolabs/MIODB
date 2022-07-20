@@ -59,6 +59,7 @@ public class MDBQuery: MDBQueryWhere {
     var joins: [ Join ] = []
     var _group_by: [ String ] = []
     var on_conflict: String = ""
+    var distinct_on: [String] = []
     public var _alias: String? = nil
     
     public var delegate: MDBQueryProtocol? = nil
@@ -145,15 +146,34 @@ public class MDBQuery: MDBQueryWhere {
     }
     
     
+    
+    //
+    // DISTINCT ON
+    //
+    
+    @discardableResult
+    public func distinctOn ( _ cols: [String] ) -> MDBQuery {
+        distinct_on = cols
+        return self
+    }
+    
+    public func distinctOnRaw ( ) -> String {
+        return distinct_on.count == 0 ?
+               ""
+             : "distinct on (" + distinct_on.joined( separator: "," ) + ") "
+    }
+    
     //
     // WHERE
     //
     
+    @discardableResult
     public func beginGroup ( ) -> MDBQuery {
         super.begin_group()
         return self
     }
 
+    @discardableResult
     public func endGroup ( ) -> MDBQuery {
         super.end_group()
 
@@ -164,65 +184,79 @@ public class MDBQuery: MDBQueryWhere {
         return _whereCond != nil ? "WHERE " + _whereCond!.raw( ) : ""
     }
 
+    @discardableResult
     public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> MDBQuery {
         try super.add_where_line( where_op, field, op, value )
 
         return self
     }
 
+    @discardableResult
     public func andWhereRaw ( _ raw: String ) -> MDBQuery {
         return try! addWhereLine( .AND, "", WHERE_LINE_OPERATOR.RAW, MDBValue.init(raw: raw) )
     }
 
+    @discardableResult
     public func orWhereRaw ( _ raw: String ) -> MDBQuery {
         return try! addWhereLine( .OR, "", WHERE_LINE_OPERATOR.RAW, MDBValue.init(raw: raw) )
     }
 
-    
+    @discardableResult
     public func andWhereNULL ( _ field: String ) -> MDBQuery {
         return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS, try! MDBValue( nil ) )
     }
 
+    @discardableResult
     public func orWhereNULL ( _ field: String ) throws -> MDBQuery {
         return try! addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IS, try! MDBValue( nil ) )
     }
 
+    @discardableResult
     public func andWhereNotNULL ( _ field: String ) -> MDBQuery {
         return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS_NOT, try! MDBValue( nil ) )
     }
 
+    @discardableResult
     public func orWhereNotNULL ( _ field: String ) -> MDBQuery {
         return try! addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IS_NOT, try! MDBValue( nil ) )
     }
 
+    @discardableResult
     public func andWhereIN ( _ field: String, _ vals: [Any] ) throws -> MDBQuery {
         return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IN, try MDBValue.fromValue( vals ) )
     }
 
+    @discardableResult
     public func andWhereNotIN ( _ field: String, _ vals: [Any] ) throws -> MDBQuery {
         return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.NOT_IN, try MDBValue.fromValue( vals ) )
     }
 
+    @discardableResult
     public func orWhereIN ( _ field: String, _ vals: [Any] ) throws -> MDBQuery {
         return try addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IN, try MDBValue.fromValue( vals ) )
     }
 
+    @discardableResult
     public func orWhereNotIN ( _ field: String, _ vals: [Any] ) throws -> MDBQuery {
         return try addWhereLine( .OR, field, WHERE_LINE_OPERATOR.NOT_IN, try MDBValue.fromValue( vals ) )
     }
 
+    @discardableResult
     public func andWhere ( _ field: String, _ value: Any ) throws -> MDBQuery {
         return try addWhereLine( .AND, field, .EQ, value )
     }
 
+    @discardableResult
     public func andWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) throws -> MDBQuery {
         return try addWhereLine( .AND, field, op, value )
     }
 
+    @discardableResult
     public func orWhere ( _ field: String, _ value: Any ) throws -> MDBQuery {
         return try addWhereLine( .OR, field, .EQ, value )
     }
     
+    @discardableResult
     public func orWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) throws -> MDBQuery {
         return try addWhereLine( .OR, field, op, value )
     }
@@ -331,7 +365,7 @@ public class MDBQuery: MDBQueryWhere {
             case .UNKOWN:
                  return ""
             case .SELECT:
-                 return composeQuery( [ "SELECT " + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
+                 return composeQuery( [ "SELECT " + distinctOnRaw( ) + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
                                       , aliasRaw( )
                                       , joinRaw( )
                                       , whereRaw( )

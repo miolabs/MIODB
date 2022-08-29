@@ -360,7 +360,7 @@ public class MDBQuery: MDBQueryWhere {
         return self
     }
     
-    public func rawQuery() -> String {
+    public func rawQuery () -> String {
         switch queryType {
             case .UNKOWN:
                  return ""

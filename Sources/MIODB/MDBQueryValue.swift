@@ -72,6 +72,17 @@ public class MDBValue {
             else if v is Decimal       { value = NSDecimalNumber(decimal: (v as! Decimal)).stringValue }
             else if v is Bool          { value = (v as! Bool) ? "TRUE" : "FALSE" }
             else if v is Date          { value = "'" + MIOCoreDateTDateTimeFormatter().string( from: (v as! Date) ) + "'" }
+            else if v is [String:Any]  {
+                guard let data = try? JSONSerialization.data(withJSONObject: v as! [String:Any], options: [] ) else {
+                        throw MDBValueError.couldNotConvert( v! )
+                    }
+                
+                guard let new_value = String.init( data: data, encoding: .utf8 ) else {
+                    throw MDBValueError.couldNotConvert( v! )
+                }
+                
+                value = "'\(new_value)'"
+            }
             else {
                 var converted = false
                 

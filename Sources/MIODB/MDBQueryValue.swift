@@ -73,7 +73,7 @@ public class MDBValue {
             else if v is Bool          { value = (v as! Bool) ? "TRUE" : "FALSE" }
             else if v is Date          { value = "'" + MIOCoreDateTDateTimeFormatter().string( from: (v as! Date) ) + "'" }
             else if v is [String:Any]  {
-                guard let data = try? JSONSerialization.data(withJSONObject: v as! [String:Any], options: [] ) else {
+                guard let data = try? MIOCoreJsonValue( withJSONObject: v as! [String:Any] ) else {
                         throw MDBValueError.couldNotConvert( v! )
                     }
                 

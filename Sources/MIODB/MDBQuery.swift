@@ -365,8 +365,7 @@ public class MDBQuery: MDBQueryWhere {
             case .UNKOWN:
                  return ""
             case .SELECT:
-                 return composeQuery( [ "SELECT " + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
-                 //return composeQuery( [ "SELECT " + distinctOnRaw( ) + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
+                 return composeQuery( [ "SELECT " + distinctOnRaw( ) + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
                                       , aliasRaw( )
                                       , joinRaw( )
                                       , whereRaw( )

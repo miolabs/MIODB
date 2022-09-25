@@ -159,8 +159,8 @@ public class MDBQuery: MDBQueryWhere {
     
     public func distinctOnRaw ( ) -> String {
         return distinct_on.count == 0 ?
-               ""
-             : "distinct on (" + distinct_on.joined( separator: "," ) + ") "
+                 ""
+               : "distinct on (" + MDBValue( fromTable:distinct_on.joined( separator: "," ) ).value + ") "
     }
     
     //
@@ -365,7 +365,8 @@ public class MDBQuery: MDBQueryWhere {
             case .UNKOWN:
                  return ""
             case .SELECT:
-                 return composeQuery( [ "SELECT " + distinctOnRaw( ) + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
+                 return composeQuery( [ "SELECT " + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
+                 //return composeQuery( [ "SELECT " + distinctOnRaw( ) + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
                                       , aliasRaw( )
                                       , joinRaw( )
                                       , whereRaw( )

@@ -47,7 +47,7 @@ public class MDBQuery: MDBQueryWhere {
 
     // In some cases like "WHERE IN ()" we can predict the query will not return values
     public var willBeEmpty: Bool = false
-    var table: String = ""
+    public var table: String = ""
     public var queryType: QUERY_TYPE = .UNKOWN
     var _selectFields: [ String ] = []
     public var values: MDBValues = [:]

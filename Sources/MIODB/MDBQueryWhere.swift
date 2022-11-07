@@ -85,7 +85,7 @@ public class MDBWhereGroup : MDBWhereString {
 
 
 public class MDBQueryWhere {
-    var _whereCond: MDBWhereGroup? = nil
+    public var _whereCond: MDBWhereGroup? = nil
     var whereStack: [ MDBWhereGroup ] = []
     
     //

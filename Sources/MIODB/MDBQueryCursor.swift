@@ -17,7 +17,7 @@ public class MDBQueryCursorIterator<T> {
     }
     
     public func hasData ( ) -> Bool {
-        return curOffset + 1 < allValues.count
+        return curOffset < allValues.count
     }
     
     public func next ( _ cb: @escaping ( _ l: [T] ) throws -> Void ) throws {
@@ -33,21 +33,14 @@ public class MDBQueryCursorIterator<T> {
 
 
 
-public class MDBQueryCursor {
+public class MDBQueryCursor : MDBQueryCursorIterator<MDBValues> {
     var query: MDBQuery
-    var allValues: [MDBValues] = []
-    var curOffset: Int = 0
-    var curLimit: Int = 1000
     
     public init ( _ query: MDBQuery  ) {
         self.query = query
-        self.allValues = query.multiValues
+        super.init(query.multiValues)        
     }
-    
-    public func hasData ( ) -> Bool {
-        return curOffset + 1 < allValues.count
-    }
-    
+        
     public func exec ( cb: @escaping ( _ l: MDBQuery ) throws -> Void ) throws {
         let it = MDBQueryCursorIterator<MDBValues>( allValues )
         

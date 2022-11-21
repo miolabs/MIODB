@@ -42,9 +42,7 @@ public class MDBQueryCursor : MDBQueryCursorIterator<MDBValues> {
     }
         
     public func exec ( cb: @escaping ( _ l: MDBQuery ) throws -> Void ) throws {
-        let it = MDBQueryCursorIterator<MDBValues>( allValues )
-        
-        try it.next{ values in
+        try next{ values in
           self.query.multiValues = values
         
           try cb( self.query )

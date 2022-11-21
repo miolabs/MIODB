@@ -501,4 +501,8 @@ public class MDBQuery: MDBQueryWhere {
         return sorted_values.filter{ col in !conflict_keys.contains( col.key ) }
                             .map{ col in ("\"\(col.key)\" = excluded.\"\(col.key)\"" ) }.joined(separator: ",")
     }
+    
+    func multi_insert_cursor ( ) {
+        
+    }
 }

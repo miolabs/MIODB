@@ -332,7 +332,7 @@ public class MDBQuery: MDBQueryWhere {
 
     
     @discardableResult
-    public func join ( table: String, json: String, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil ) -> MDBQuery {
+    public func join ( table: String, json: String, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil, _ cb: @escaping ( JoinJSON ) throws -> Void = { _ in }  ) throws -> MDBQuery {
         let to_table   = MDBValue( fromTable: to ).value
         let new_join   = JoinJSON( joinType: joinType, table: table, json: json, toTable: to_table, asWhat: as_what )
         let join_already_done = joins.filter{ j in j.raw( ) == new_join.raw( ) }.count > 0
@@ -340,6 +340,9 @@ public class MDBQuery: MDBQueryWhere {
         if !join_already_done {
           joins.append( new_join )
         }
+        
+        try cb( new_join )
+        
         return self
     }
 

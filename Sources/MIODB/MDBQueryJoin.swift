@@ -46,7 +46,7 @@ public class Join: MDBQueryWhere {
 }
 
 
-class JoinJSON: Join {
+public class JoinJSON: Join {
     init ( joinType: JOIN_TYPE, table: String, json: String, toTable: String, asWhat: String? = nil ) {
         super.init( joinType: joinType, table: table, fromTable: json, toTable: toTable, asWhat: asWhat )
     }
@@ -54,7 +54,7 @@ class JoinJSON: Join {
     override func raw ( ) -> String {
         // join product on _relation__products::jsonb ? UPPER(product.id::text) as product_productmodifier;
 
-        return "\(joinType) JOIN \"\(table)\"" + (asWhat != nil ? " AS \"\(asWhat!)\"" : "") + " ON \(fromTable)::jsonb ? UPPER(\(toTable)::text)"
+        return "\(joinType) JOIN \"\(table)\"" + (asWhat != nil ? " AS \"\(asWhat!)\"" : "") + " ON \(fromTable)::jsonb ? UPPER(\(toTable)::text) \(rawWhere())" 
     }
 }
 

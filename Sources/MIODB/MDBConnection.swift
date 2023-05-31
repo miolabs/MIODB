@@ -51,7 +51,7 @@ open class MDBConnection {
          self.poolID = connection.poolID
      }
     
-    open func create ( ) throws -> MIODB { throw MDBError.createNotImplemented( ) }
+    open func create ( _ to_db: String? = nil ) throws -> MIODB { throw MDBError.createNotImplemented( ) }
     
     open func startIdleTimer ( ) {
         isExecuting = false

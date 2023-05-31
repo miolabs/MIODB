@@ -14,7 +14,7 @@ open class MIODB: MDBConnection {
 //    public var isInsideTransaction : Bool = false
 //    var transactionQueryStrings : [String] = []
         
-    open func connect() throws { }
+    open func connect( _ to_db: String? = nil ) throws { }
     open func disconnect() { }
     open func changeScheme( _ schema: String? ) throws { }
 

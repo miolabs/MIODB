@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import DualLinkDB
 
 public enum QUERY_TYPE
 {
@@ -147,14 +148,33 @@ public class MDBQuery: MDBQueryWhere {
     public func insert ( _ val: [[String:Any?]] ) throws -> MDBQuery {
         queryType = .MULTI_INSERT
         self.multiValues = try val.map{ try toValues( $0 ) }
+        try check_all_rows_has_same_keys( )
         return self
+    }
+    
+    func check_all_rows_has_same_keys ( ) throws
+    {
+        if multiValues.isEmpty {
+            return
+        }
+        
+        let keys = Set( multiValues[ 0 ].keys )
+        
+        for i in 1..<multiValues.count {
+            let row_keys = Set( multiValues[ i ].keys )
+            
+            if keys.intersection( keys ).count != keys.count {
+                throw DLDBError.general( "The inserted dictionary does not have the same keys: \(row_keys) vs first row keys: \(keys)" )
+            }
+        }
     }
 
     
     public func update ( _ val: [[String:Any?]], _ fields: [String] ) throws -> MDBQuery {
         queryType = .MULTI_UPDATE
         self.multiValues = try val.map{ try toValues( $0 ) }
-        
+        try check_all_rows_has_same_keys( )
+
         for f in fields {
             let without_casting = f.components(separatedBy: "::")
             let casting = without_casting.count > 1 ? "::\(without_casting[ 1 ])" : ""

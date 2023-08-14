@@ -12,9 +12,11 @@ public enum QUERY_TYPE
 {
     case UNKOWN
     case SELECT
+    case SELECT_FOR_UPDATE
     case INSERT
     case MULTI_INSERT
     case UPDATE
+    case MULTI_UPDATE
     case DELETE
     case UPSERT
     case MULTI_UPSERT
@@ -101,6 +103,14 @@ public class MDBQuery: MDBQueryWhere {
         return self
     }
 
+    @discardableResult
+    public func select_for_update ( _ args: Any... ) -> MDBQuery {
+        select( args )
+        queryType = .SELECT_FOR_UPDATE
+
+        return self
+    }
+
     public func selectFieldsRaw ( ) -> String {
         return _selectFields.isEmpty ? "*" : _selectFields.joined( separator: "," )
     }
@@ -140,6 +150,21 @@ public class MDBQuery: MDBQueryWhere {
         return self
     }
 
+    
+    public func update ( _ val: [[String:Any?]], _ fields: [String] ) throws -> MDBQuery {
+        queryType = .MULTI_UPDATE
+        self.multiValues = try val.map{ try toValues( $0 ) }
+        
+        for f in fields {
+            let without_casting = f.components(separatedBy: "::")
+            let casting = without_casting.count > 1 ? "::\(without_casting[ 1 ])" : ""
+            try andWhere( "\(table).\(without_casting[0])", MDBValue( raw: "s.\"\(without_casting[0])\"\(casting)" ) )
+        }
+        
+        return self
+    }
+
+    
     public func delete ( ) -> MDBQuery {
         queryType = .DELETE
         return self
@@ -367,7 +392,8 @@ public class MDBQuery: MDBQueryWhere {
         switch queryType {
             case .UNKOWN:
                  return ""
-            case .SELECT:
+            case .SELECT, .SELECT_FOR_UPDATE:
+                 let for_update = queryType == .SELECT_FOR_UPDATE ? " FOR UPDATE" : ""
                  return composeQuery( [ "SELECT " + distinctOnRaw( ) + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
                                       , aliasRaw( )
                                       , joinRaw( )
@@ -376,8 +402,9 @@ public class MDBQuery: MDBQueryWhere {
                                       , orderRaw( )
                                       , limitRaw( )
                                       , offsetRaw( )
+                                      , for_update
                                       ] )
-
+                 
             case .UPSERT:
                 let sorted_values = sortedValues()
                 let t = MDBValue( fromTable: table ).value
@@ -433,6 +460,19 @@ public class MDBQuery: MDBQueryWhere {
                                       , whereRaw( )
                                       , returningRaw()
                                       ] )
+            case .MULTI_UPDATE:
+                let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
+
+                return sorted_values.isEmpty ? ""
+                     : composeQuery( [ "UPDATE " + MDBValue( fromTable: table ).value + " SET"
+                                     , multiUpdateValuesRaw( )
+                                     , "FROM (SELECT * FROM (VALUES "
+                                     , multiValuesRaw( sorted_values )
+                                     , ") AS t(\( sorted_values.map{ "\"\($0.key)\"" }.joined(separator: ", ") ))) AS s"
+                                     , whereRaw( )
+                                     , returningRaw()
+                                     ] )
+
             case .DELETE:
                  return composeQuery( [ "DELETE FROM " + MDBValue( fromTable: table ).value
                                       , whereRaw( )
@@ -445,7 +485,7 @@ public class MDBQuery: MDBQueryWhere {
         return (parts.filter{ $0 != nil && $0 != "" } as! [String]).joined(separator: " " )
     }
     
-    public func valuesRaw( ) -> String {
+    public func valuesRaw ( ) -> String {
         var key_eq_values: [String] = []
 
         for (key,value) in sortedValues() {
@@ -455,6 +495,18 @@ public class MDBQuery: MDBQueryWhere {
         return key_eq_values.joined(separator: ",")
     }
 
+    public func multiUpdateValuesRaw ( ) -> String {
+        var key_eq_values: [String] = []
+
+        if !multiValues.isEmpty {
+            for (key,_) in sortedValues( multiValues[ 0 ] ) {
+                key_eq_values.append( "\"\(key)\"= s.\"\(key)\"")
+            }
+        }
+        
+        return key_eq_values.joined(separator: ",")
+    }
+    
     // Unfortunatelly dictionaries do not respect the declaration order, so we need to sorted them for testing
     func sortedValues ( _ v: MDBValues? = nil ) -> [(key:String,value:MDBValue)] {
         #if testing

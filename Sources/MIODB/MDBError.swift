@@ -10,6 +10,7 @@ import Foundation
 
 public enum MDBError: Error
 {
+    case general( _ message: String )
     case cantBeginTransactionWhileInsideTransaction
     case cantEndTransactionWhileNotInsideTransaction
     case invalidPoolID( _ poolID: String, functionName: String = #function)
@@ -28,6 +29,8 @@ extension MDBError: LocalizedError {
                 return "[MDBError] \(poolID) does not exists in MDBManager. Called from \"\(functionName)\"."
             case let .createNotImplemented(functionName):
                 return "[MDBError] create function not implemented in MDBConnection. Called from \"\(functionName)\"."
+        case let .general( message ):
+            return "[MDBError] \(message)."
         }
     }
 }

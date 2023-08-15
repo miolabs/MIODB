@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import DualLinkDB
 
 public enum QUERY_TYPE
 {
@@ -164,7 +163,7 @@ public class MDBQuery: MDBQueryWhere {
             let row_keys = Set( multiValues[ i ].keys )
             
             if keys.intersection( keys ).count != keys.count {
-                throw DLDBError.general( "The inserted dictionary does not have the same keys: \(row_keys) vs first row keys: \(keys)" )
+                throw MDBError.general( "The inserted dictionary does not have the same keys: \(row_keys) vs first row keys: \(keys)" )
             }
         }
     }

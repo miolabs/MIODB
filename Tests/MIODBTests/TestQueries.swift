@@ -9,8 +9,8 @@ import XCTest
 
 import MIODB
 
-class TestDBHelper: XCTestCase {
-
+class TestDBHelper: XCTestCase
+{
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
@@ -24,16 +24,14 @@ class TestDBHelper: XCTestCase {
         XCTAssertTrue( try MDBValue.fromValue(true).value == "TRUE", "true" )
         XCTAssertTrue( try MDBValue.fromValue(nil).value == "NULL", "NULL" )
         XCTAssertTrue( try MDBValue.fromValue("hello").value == "'hello'", "'hello'" )
-        XCTAssertTrue( try MDBValue.fromValue([10,"hello",true]).value == "(10,'hello',TRUE)", "[10,'hello',true]" )
+        XCTAssertTrue( try MDBValue.fromValue([10,"hello",true] as [Any]).value == "(10,'hello',TRUE)", "[10,'hello',true]" )
         XCTAssertTrue( try MDBValue.fromValue("don't put damn \' or we have to scape the '").value == "'don''t put damn '' or we have to scape the '''", "'don''t put damn '' or we have to scape the '''" )
     }
     
 
     func testJoin() throws {
-        let db = MIODB( )
-        let query = MDBQuery( db: db ).selectFields( "*" )
-                                      .fromTable( "product" )
-                                      .join( table: "productCategory", fromTable: "product", column: "category" )
+        let query = try MDBQuery( "product" ).select( "*" )
+                                      .join( table: "productCategory", to: "category" )
                                       .rawQuery( )
 
         XCTAssertTrue(
@@ -42,11 +40,9 @@ class TestDBHelper: XCTestCase {
     }
 
     func testTwoJoin() throws {
-        let db = MIODB( )
-        let query = MDBQuery( db: db ).selectFields( "*" )
-                                      .fromTable( "product" )
-                                      .join( table: "ProductModifier", fromTable: "product", column: "productModifier" )
-                                      .join( table: "ProductCategoryModifier", fromTable: "productModifier", column: "productModifierCategory" )
+        let query = try MDBQuery( "product" ).select( "*" )
+                                      .join( table: "ProductModifier", to: "productModifier" )
+                                      .join( table: "ProductCategoryModifier", from: "productModifier", to: "productModifierCategory" )
                                       .rawQuery( )
 
         XCTAssertTrue(

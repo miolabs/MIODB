@@ -161,8 +161,9 @@ public class MDBQuery: MDBQueryWhere {
         
         for i in 1..<multiValues.count {
             let row_keys = Set( multiValues[ i ].keys )
+            let cnt = keys.intersection( keys ).count
             
-            if keys.intersection( keys ).count != keys.count {
+            if cnt != keys.count || row_keys.count != cnt {
                 throw MDBError.general( "The inserted dictionary does not have the same keys: \(row_keys) vs first row keys: \(keys)" )
             }
         }

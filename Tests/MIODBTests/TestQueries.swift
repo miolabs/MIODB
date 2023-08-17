@@ -297,4 +297,33 @@ class TestDBHelper: XCTestCase
     }
 
 
+    func testMultiInsert ( ) throws {
+        do
+        {
+          _ = try MDBQuery( "product" ).insert( [ ["a": 1], ["a": 2, "b": "hello" ] ] )
+          XCTFail()
+        }
+        catch {
+           
+        }
+
+
+        do
+        {
+          _ = try MDBQuery( "product" ).insert( [ ["a": 1, "b": 2], ["a": 2 ] ] )
+          XCTFail()
+        }
+        catch {
+           
+        }
+
+        do
+        {
+          _ = try MDBQuery( "product" ).insert( [ ["a": 1, "b": 2], ["a": 2, "b": 3 ] ] )
+        }
+        catch {
+          XCTFail()
+        }
+
+    }
 }

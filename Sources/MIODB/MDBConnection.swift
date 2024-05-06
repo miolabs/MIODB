@@ -8,8 +8,8 @@
 
 import Foundation
 
-open class MDBConnection {
-
+open class MDBConnection 
+{
     public var poolID:String?
 
     public var host:String?

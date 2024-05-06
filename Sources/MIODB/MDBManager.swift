@@ -7,16 +7,18 @@
 //
 
 import Foundation
+import MIOCore
 
-enum MDBType {
+enum MDBType
+{
     case None
     case SQLLite
     case Postgres
     case MySQL
 }
 
-public class MDBManager {
-    
+public class MDBManager 
+{
     public static let shared = MDBManager()
         
     // Initialization
@@ -24,14 +26,14 @@ public class MDBManager {
         startIdleTimer()
     }
 
-    let connectionQueue = DispatchQueue(label: "com.miolabs.connection.queue")
+    static let connectionQueue = DispatchQueue(label: "com.miolabs.connection.queue")
     
     var connections: [String:MDBConnection] = [:]
     var pool: [String:[MIODB]] = [:]
 
     
     public func addConnection( _ connection: MDBConnection, forIdentifier poolID:String ) {
-        connectionQueue.sync {
+        MDBManager.connectionQueue.sync( flags: .barrier ) {
             self.connections[ poolID ] = connection
         }
         
@@ -43,7 +45,7 @@ public class MDBManager {
         var conn:MIODB? = nil
         let pool_id = to_db ?? db_id
 
-        try connectionQueue.sync {
+        try MDBManager.connectionQueue.sync( flags: .barrier ) {
             
             if self.pool[ pool_id ]?.count ?? 0 > 0 {
                 conn = pool[ pool_id ]!.first!
@@ -64,7 +66,7 @@ public class MDBManager {
     
     
     public func release ( _ db: MIODB ) {
-        connectionQueue.sync {
+        MDBManager.connectionQueue.sync( flags: .barrier ) {
             
             if let poolID = db.poolID {
                 
@@ -83,26 +85,31 @@ public class MDBManager {
             
             Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
                 
-                self.connectionQueue.sync {
-                
+                MDBManager.connectionQueue.sync( flags: .barrier ) {
+                    
                     var new_pool:[String:[MIODB]] = [:]
+                    var needs_update = false
                     
                     for (poolID, connections) in self.pool {
-                                              
-                        var new_conns:[MIODB] = []
+                        var index = 0
                         for db in connections {
                             db.updateIdleTime(seconds: 60)
                             if db.idleTimeInSeconds > (60 * 10) {
                                 db.disconnect()
+                                needs_update = true
                             }
                             else {
-                                new_conns.append(db)
+                                var dbs = new_pool[ poolID ] ?? []
+                                dbs.append( db )
+                                new_pool[ poolID ] = dbs
                             }
+                            index += 1
                         }
-                        new_pool [poolID ] = new_conns
                     }
                     
-                    self.pool = new_pool
+                    if needs_update { 
+                        self.pool = new_pool
+                    }
                 }
             }
             RunLoop.current.run()

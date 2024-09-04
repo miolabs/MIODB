@@ -1,16 +1,23 @@
 {
-  "object": {
-    "pins": [
-      {
-        "package": "MIOCore",
-        "repositoryURL": "https://github.com/miolabs/MIOCore.git",
-        "state": {
-          "branch": "master",
-          "revision": "e6be6ee8bfe939dccef48d579ab733f66ab99a94",
-          "version": null
-        }
+  "pins" : [
+    {
+      "identity" : "miocore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/miolabs/MIOCore.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "3ed71e3877ef1b2f3b0919743d780e93e524e01a"
       }
-    ]
-  },
-  "version": 1
+    },
+    {
+      "identity" : "swift-log",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-log.git",
+      "state" : {
+        "revision" : "9cb486020ebf03bfa5b5df985387a14a98744537",
+        "version" : "1.6.1"
+      }
+    }
+  ],
+  "version" : 2
 }

@@ -37,6 +37,7 @@ struct MDBValueTypeConversion
 
 public class MDBValue {
     public var value: String = "" ;
+    public var rawValue: Any?;
 
     static var convert: [ MDBValueTypeConversion ] = []
     public static func register_type_conversion ( _ target: AnyClass, _ fn: @escaping MDBValueTypeConversionCallBack ) {
@@ -45,7 +46,8 @@ public class MDBValue {
     
     public init( _ v: Any?, isPartialString: Bool = false ) throws {
        try MIOCoreAutoReleasePool {
-            if v == nil || v is NSNull { value = "NULL" }
+            rawValue = v
+            if v == nil || v is NSNull { value = "NULL"; }
             else if v is [Any]         {
                                          //let list = try (v as! [Any]).map{ try MDBValue.fromValue( $0 ).value }
                                         var list:[String] = []

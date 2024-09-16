@@ -22,12 +22,11 @@ open class MIODB: MDBConnection {
     
     @discardableResult open func fetch ( _ table: String, _ id: String ) throws -> [String : Any]? {
         let entity = try execute( MDBQuery( table ).select().andWhere( "id", .EQ, id ) )!
-
         return entity.first
     }
     
     @discardableResult open func execute(_ query: MDBQuery ) throws -> [[String : Any]]? {
-        let result = try executeQueryString( query.rawQuery() )
+        let result = try executeQueryString( MDBQueryEncoderSQL(query).rawQuery() )
         startIdleTimer()
         return result
     }

@@ -9,7 +9,7 @@ import XCTest
 
 import MIODB
 
-class TestDBQueries: XCTestCase
+class TestDBHelperV1: XCTestCase
 {
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -30,61 +30,59 @@ class TestDBQueries: XCTestCase
     
 
     func testJoin() throws {  // temporarily removed. See Readme.md
-        //let query = try MDBQuery( "product" ).select( "*" )
+        //let query = try MDBQueryV1( "product" ).select( "*" )
         //                              .join( table: "productCategory", to: "category" )
         //                              .rawQuery( )
 
-       // XCTAssertTrue(
-       //      (query == "SELECT * FROM \"product\" INNER JOIN \"productCategory\" ON \"productCategory\".\"id\" = \"product\".\"category\"")
-       //    , query )
+        //XCTAssertTrue(
+        //     (query == "SELECT * FROM \"product\" INNER JOIN \"productCategory\" ON \"productCategory\".\"id\" = \"product\".\"category\"")
+        //   , query )
         // Actual behaviour:
         //              SELECT * FROM "product" INNER JOIN "productCategory" ON "productCategory"."id" = "category"
     }
 
     func testTwoJoin() throws {  // temporarily removed. See Readme.md
-        //let query = try MDBQuery( "product" ).select( "*" )
+        //let query = try MDBQueryV1( "product" ).select( "*" )
         //                              .join( table: "ProductModifier", to: "productModifier" )
         //                              .join( table: "ProductCategoryModifier", from: "productModifier", to: "productModifierCategory" )
         //                              .rawQuery( )
 
-       // XCTAssertTrue(
-       //      (query == "SELECT * FROM \"product\" INNER JOIN \"ProductModifier\" ON \"ProductModifier\".\"id\" = \"product\".\"productModifier\" INNER JOIN \"ProductCategoryModifier\" ON \"ProductCategoryModifier\".\"id\" = \"productModifier\".\"productModifierCategory\"" )
-       //    , query )
+        //XCTAssertTrue(
+        //     (query == "SELECT * FROM \"product\" INNER JOIN \"ProductModifier\" ON \"ProductModifier\".\"id\" = \"product\".\"productModifier\" INNER JOIN \"ProductCategoryModifier\" ON \"ProductCategoryModifier\".\"id\" = \"productModifier\".\"productModifierCategory\"" )
+        //   , query )
         // Actual behaviour:
         //             SELECT * FROM "product" INNER JOIN "ProductModifier" ON "ProductModifier"."id" = "productModifier" INNER JOIN
         //        "ProductCategoryModifier" ON "productModifier" = "productModifierCategory"
     }
 
     func testSelect ( ) throws {
-        let query = MDBQueryEncoderSQL(
-                        MDBQuery( "product" ).select( )
-                    ).rawQuery( ) ;
+        let query = MDBQueryV1( "product" ).select( ).rawQuery( ) ;
         
         XCTAssert( query == "SELECT * FROM \"product\"", query )
 
-        let query2 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "name" )).rawQuery( ) ;
+        let query2 = MDBQueryV1( "product" ).select( "name" ).rawQuery( ) ;
         
         XCTAssert( query2 == "SELECT \"name\" FROM \"product\"", query2 )
 
-        let query3 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "name", "price" )).rawQuery( ) ;
+        let query3 = MDBQueryV1( "product" ).select( "name", "price" ).rawQuery( ) ;
         
         XCTAssert( query3 == "SELECT \"name\",\"price\" FROM \"product\"", query3 )
 
         // DO NOT USE "as"
-        let query4 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "product.*", "modifier.price AS mod_price" )).rawQuery( ) ;
+        let query4 = MDBQueryV1( "product" ).select( "product.*", "modifier.price AS mod_price" ).rawQuery( ) ;
         
         XCTAssert( query4 == "SELECT \"product\".*,\"modifier\".\"price\" AS \"mod_price\" FROM \"product\"", query4 )
     }
 
 
     func testInsert ( ) throws {
-        let query = try MDBQuery( "product" ).insert( [ "modifier": 10, "str": "Hello" ] ).test()
-        let query_str = MDBQueryEncoderSQL(query).rawQuery( ) ;
+        let query = try MDBQueryV1( "product" ).insert( [ "modifier": 10, "str": "Hello" ] ).test()
+        let query_str = query.rawQuery( ) ;
         
         XCTAssert( query_str == "INSERT INTO \"product\" (\"modifier\",\"str\") VALUES (10,'Hello')", query_str )
 
         _ = try query.mergeValues( [ "modifier": 15, "extra": "world" ] )
-        let query2_str = MDBQueryEncoderSQL(query).rawQuery()
+        let query2_str = query.rawQuery()
         print("QUERY 2: \(query2_str)")
         
         XCTAssert( query2_str == "INSERT INTO \"product\" (\"extra\",\"modifier\",\"str\") VALUES ('world',15,'Hello')", query2_str )
@@ -93,39 +91,39 @@ class TestDBQueries: XCTestCase
 
     
     func testUpdate ( ) throws {
-        let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).update( [ "modifier": 10.5, "str": "Hello" ] ).test()).rawQuery( ) ;
+        let query = try MDBQueryV1( "product" ).update( [ "modifier": 10.5, "str": "Hello" ] ).test().rawQuery( ) ;
         
         XCTAssert( query == "UPDATE \"product\" SET \"modifier\"=10.5,\"str\"='Hello'", query )
     }
 
     
     func testSelectWhere ( ) throws {
-        let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( ).andWhere("name", .LT, "hello world")).rawQuery( ) ;
+        let query = try MDBQueryV1( "product" ).select( ).andWhere("name", .LT, "hello world").rawQuery( ) ;
         
         XCTAssert( query == "SELECT * FROM \"product\" WHERE \"name\" < 'hello world'", query )
 
 
-        let query2 = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( )
+        let query2 = try MDBQueryV1( "product" ).select( )
                                          .orWhere("name", .LT, "hello world")
                                          .orWhere("price", .GE, 15 )
-                                         ).rawQuery( ) ;
+                                         .rawQuery( ) ;
 
         XCTAssert( query2 == "SELECT * FROM \"product\" WHERE \"name\" < 'hello world' OR \"price\" >= 15", query2 )
 
         
-        let query2_1 = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( )
+        let query2_1 = try MDBQueryV1( "product" ).select( )
                                          .orWhere("name", .LT, "hello world")
                                          .orWhere("price", .GE, 15 )
                                             .limit( 10 )
                                             .offset( 20 )
-                                            ).rawQuery( ) ;
+                                            .rawQuery( ) ;
         
         // SELECT * FROM "product" WHERE "name" < 'hello world' OR "price" >= 15 LIMIT 10 OFFSET 20
         XCTAssert( query2_1 == "SELECT * FROM \"product\" WHERE \"name\" < 'hello world' OR \"price\" >= 15 LIMIT 10 OFFSET 20", query2_1 )
 
         
         
-        let query3 = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( )
+        let query3 = try MDBQueryV1( "product" ).select( )
                                            .beginGroup()
                                              .orWhere("name", .LT, "hello world")
                                              .orWhere("price", .GE, 15 )
@@ -133,12 +131,12 @@ class TestDBQueries: XCTestCase
                                            .beginGroup()
                                              .andWhere( "max", .EQ, 1234 )
                                            .endGroup()
-                                         ).rawQuery( ) ;
+                                         .rawQuery( ) ;
         
         XCTAssert( query3 == "SELECT * FROM \"product\" WHERE (\"name\" < 'hello world' OR \"price\" >= 15) AND (\"max\" = 1234)", query3 )
 
         
-        let query3_1 = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( )
+        let query3_1 = try MDBQueryV1( "product" ).select( )
                                            .beginGroup()
                                                .beginGroup()
                                                  .orWhere("name", .LT, "hello world")
@@ -148,23 +146,23 @@ class TestDBQueries: XCTestCase
                                                  .andWhere( "max", .EQ, 1234 )
                                                .endGroup()
                                            .endGroup()
-                                           ).rawQuery( ) ;
+                                           .rawQuery( ) ;
         // SELECT * FROM "product" WHERE (("name" < 'hello world' OR "price" >= 15) AND ("max" = 1234))
         XCTAssert( query3_1 == "SELECT * FROM \"product\" WHERE ((\"name\" < 'hello world' OR \"price\" >= 15) AND (\"max\" = 1234))", query3_1 )
 
         
-        let query3_2 = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( )
+        let query3_2 = try MDBQueryV1( "product" ).select( )
                                            .beginGroup()
                                              .orWhere("name", .LT, "hello world")
                                              .orWhere("price", .GE, 15 )
                                            .endGroup()
                                            .andWhere( "max", .EQ, 1234 )
-                                         ).rawQuery( ) ;
+                                         .rawQuery( ) ;
         
         XCTAssert( query3_2 == "SELECT * FROM \"product\" WHERE (\"name\" < 'hello world' OR \"price\" >= 15) AND \"max\" = 1234", query3_2 )
 
         
-        let query4 = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( )
+        let query4 = try MDBQueryV1( "product" ).select( )
                                          .beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
@@ -175,14 +173,14 @@ class TestDBQueries: XCTestCase
                                            .orWhere("name2", .LT, "hello world")
                                            .orWhere("price2", .GE, 15 )
                                          .endGroup()
-                                         ).rawQuery( ) ;
+                                         .rawQuery( ) ;
         // SELECT * FROM "product" WHERE ("name" < 'hello world' OR "price" >= 15 AND ("max" > 1234 AND "max" < 2000) OR "name2" < 'hello world' OR "price2" >= 15)
         XCTAssert( query4 == "SELECT * FROM \"product\" WHERE (\"name\" < 'hello world' OR \"price\" >= 15 AND (\"max\" > 1234 AND \"max\" < 2000) OR \"name2\" < 'hello world' OR \"price2\" >= 15)", query4 )
 
     }
 
     func testSelectWhere2 ( ) throws {
-      let query1 = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( )
+      let query1 = try MDBQueryV1( "product" ).select( )
                                          .beginGroup()
                                            .orWhere("a", .LT, "1")
                                            .orWhere("b", .GE, 15 )
@@ -197,93 +195,88 @@ class TestDBQueries: XCTestCase
                                            .orWhere("name2", .LT, "hello world")
                                            .orWhere("price2", .GE, 15 )
                                          .endGroup()
-      ).rawQuery( ) ;
+                                         .rawQuery( ) ;
       XCTAssert( query1 == "SELECT * FROM \"product\" WHERE (\"a\" < '1' OR \"b\" >= 15 OR (\"c\" > 2 AND \"d\" < 3 AND (\"e\" > 4 OR \"f\" < 5)) OR \"name2\" < 'hello world' OR \"price2\" >= 15)", query1 )
     }
     
-    
     func testInsertWhere ( ) throws {
-        let query = try MDBQuery( "product" ).beginGroup()
+        let query = try MDBQueryV1( "product" ).beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
                                          .endGroup()
                                          .insert( [ "modifier": 10, "str": "Hello" ] ).test()
-        let query_str = MDBQueryEncoderSQL(query).rawQuery( ) ;
+        let query_str = query.rawQuery( ) ;
         
         XCTAssert( query_str == "INSERT INTO \"product\" (\"modifier\",\"str\") VALUES (10,'Hello') WHERE (\"name\" < 'hello world' OR \"price\" >= 15)", query_str )
     }
 
     
     func testInsertReturning ( ) throws {
-        let query = try MDBQuery( "product" ).andWhere("price", 15 )
+        let query = try MDBQueryV1( "product" ).andWhere("price", 15 )
                                          .returning( "name", "price" )
                                          .insert( [ "modifier": 10, "str": "Hello" ] ).test()
-        let query_str = MDBQueryEncoderSQL(query).rawQuery( ) ;
+        let query_str = query.rawQuery( ) ;
         
         XCTAssert( query_str == "INSERT INTO \"product\" (\"modifier\",\"str\") VALUES (10,'Hello') WHERE \"price\" = 15 RETURNING \"name\",\"price\"", query_str )
     }
 
     
     func testMultipleInsertWhere ( ) throws {
-        let query = try MDBQuery( "product" ).beginGroup()
+        let query = try MDBQueryV1( "product" ).beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
                                          .endGroup()
                                          .insert( [ [ "modifier": 10, "str": "Hello" ], [ "modifier": -4, "str": "World" ] ] )
                                          .test()
-        let query_str = MDBQueryEncoderSQL(query).rawQuery( ) ;
+        let query_str = query.rawQuery( ) ;
         
         XCTAssert( query_str == "INSERT INTO \"product\" (\"modifier\",\"str\") VALUES (10,'Hello'),(-4,'World') WHERE (\"name\" < 'hello world' OR \"price\" >= 15)", query_str )
     }
 
     
     func testUpdateWhere ( ) throws {
-        let query = try MDBQuery( "product" ).beginGroup()
+        let query = try MDBQueryV1( "product" ).beginGroup()
                                            .orWhere("name", .LT, "hello world")
                                            .orWhere("price", .GE, 15 )
                                          .endGroup()
                                          .update( [ "modifier": 10, "str": "Hello" ] )
                                          .test()
-        let query_str = MDBQueryEncoderSQL(query).rawQuery( ) ;
+        let query_str = query.rawQuery( ) ;
         
         XCTAssert( query_str == "UPDATE \"product\" SET \"modifier\"=10,\"str\"='Hello' WHERE (\"name\" < 'hello world' OR \"price\" >= 15)", query_str )
     }
     
-     
-    func testJoins ( ) throws {  // temporarily removed. See Readme.md
-        /*
-        let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).join( table: "modifier", to: "product.productModifier" )
-                                         .select( )).rawQuery( ) ;
+    
+    func testJoins ( ) throws {
+        let query = try MDBQueryV1( "product" ).join( table: "modifier", to: "product.productModifier" )
+                                         .select( ).rawQuery( ) ;
         
         // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
         XCTAssert( query == "SELECT * FROM \"product\" INNER JOIN \"modifier\" ON \"modifier\".\"id\" = \"product\".\"productModifier\"", query )
 
 
-        let query2 = try MDBQueryEncoderSQL(MDBQuery( "product" ).join( table: "modifier", from: "modifier.identifier", to: "product.productModifier", joinType: .FULL )
-                                         .select( )).rawQuery( ) ;
+        let query2 = try MDBQueryV1( "product" ).join( table: "modifier", from: "modifier.identifier", to: "product.productModifier", joinType: .FULL )
+                                         .select( ).rawQuery( ) ;
         
         XCTAssert( query2 == "SELECT * FROM \"product\" FULL JOIN \"modifier\" ON \"modifier\".\"identifier\" = \"product\".\"productModifier\"", query2 )
-         */
     }
 
     
      func testOrder ( ) throws {
-         let query = MDBQueryEncoderSQL(MDBQuery( "product" ).orderBy( "name", .ASC )
+         let query = MDBQueryV1( "product" ).orderBy( "name", .ASC )
                                           .orderBy( "surname", .DESC )
-                                          .select( )).rawQuery( ) ;
+                                          .select( ).rawQuery( ) ;
          
          // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
          XCTAssert( query == "SELECT * FROM \"product\" ORDER BY \"name\" ASC,\"surname\" DESC", query )
      }
 
     
-    func testDoubleJoin ( ) throws {  //  temporarily removed. See Readme.md
-        /*
-        let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( ).join(table: "modifier", to: "prod").join(table: "modifier", to: "prod")).rawQuery( ) ;
+    func testDoubleJoin ( ) throws {
+        let query = try MDBQueryV1( "product" ).select( ).join(table: "modifier", to: "prod").join(table: "modifier", to: "prod").rawQuery( ) ;
         
         // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
         XCTAssert( query == "SELECT * FROM \"product\" INNER JOIN \"modifier\" ON \"modifier\".\"id\" = \"prod\"", query )
-        */
     }
 
     
@@ -292,7 +285,7 @@ class TestDBQueries: XCTestCase
         let device_entities = ["C","D"]
         let sync_id = 15
         let app_id = "APP_ID"
-        let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( )
+        let query = try MDBQueryV1( "product" ).select( )
                     .andWhere( "syncID", .GT, sync_id )
                     .beginGroup()
                        .andWhereIN( "classname", place_entities )
@@ -302,7 +295,7 @@ class TestDBQueries: XCTestCase
                        .endGroup()
                     .endGroup()
                     .orderBy("syncID", .ASC)
-                    .limit( 100 )).rawQuery( )
+                    .limit( 100 ).rawQuery( )
         
         // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
         XCTAssert( query == "SELECT * FROM \"product\" WHERE \"syncID\" > 15 AND (\"classname\" IN ('A','B') OR (\"classname\" IN ('C','D') AND \"appID\" = 'APP_ID')) ORDER BY \"syncID\" ASC LIMIT 100", query )
@@ -310,14 +303,14 @@ class TestDBQueries: XCTestCase
 
     
     func testUpsertSimple ( ) throws {
-        let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).upsert( [ "id": 1, "name": "patata" ], "id" ).test()).rawQuery( ) ;
+        let query = try MDBQueryV1( "product" ).upsert( [ "id": 1, "name": "patata" ], "id" ).test().rawQuery( ) ;
         
         // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
         XCTAssert( query == "INSERT INTO \"product\" (\"id\",\"name\") VALUES (1,'patata') ON CONFLICT (id) DO UPDATE SET \"id\"=1,\"name\"='patata'", query )
     }
 
     func testUpsertMultiple ( ) throws {
-        let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).upsert( [ [ "id": 1, "name": "patata" ], [ "id": 2, "name": "tomate" ] ], "id" ).test()).rawQuery( ) ;
+        let query = try MDBQueryV1( "product" ).upsert( [ [ "id": 1, "name": "patata" ], [ "id": 2, "name": "tomate" ] ], "id" ).test().rawQuery( ) ;
         
         // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
         XCTAssert( query == "INSERT INTO \"product\" (\"id\",\"name\") VALUES (1,'patata'),(2,'tomate') ON CONFLICT (id) DO UPDATE SET \"name\" = excluded.\"name\"", query )
@@ -325,41 +318,39 @@ class TestDBQueries: XCTestCase
     
     
     func testBitwise ( ) throws {
-        let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( ).addWhereLine(.AND, MDBValue( raw: "field & 1"), .EQ, 0 )).rawQuery( ) ;
+        let query = try MDBQueryV1( "product" ).select( ).addWhereLine(.AND, MDBValue( raw: "field & 1"), .EQ, 0 ).rawQuery( ) ;
         
         XCTAssert( query == "SELECT * FROM \"product\" WHERE field & 1 = 0", query )
     }
 
 
-    func testMultiInsertFailsWithDifferentTypes ( ) throws {
+    func testMultiInsert ( ) throws {
         do
         {
-            _ = try MDBQuery( "product" ).insert( [ ["a": 1], ["a": 2, "b": "hello" ] ] )
-            XCTFail("Expected insertion failure due to invalid data")
-        } catch MDBError.general(let message) {
-            XCTAssertTrue(message.contains("The inserted dictionary does not have the same keys"))
-        } catch {
-            XCTFail("Unexpected error: \(error)")
+          _ = try MDBQueryV1( "product" ).insert( [ ["a": 1], ["a": 2, "b": "hello" ] ] )
+          XCTFail()
         }
+        catch {
+           
+        }
+
+
         do
         {
-            _ = try MDBQuery( "product" ).insert( [ ["a": 1, "b": 2], ["a": 2 ] ] )
-            XCTFail("Expected insertion failure due to invalid data")
-        } catch MDBError.general(let message) {
-            XCTAssertTrue(message.contains("The inserted dictionary does not have the same keys"))
-        } catch {
-            XCTFail("Unexpected error: \(error)")
+          _ = try MDBQueryV1( "product" ).insert( [ ["a": 1, "b": 2], ["a": 2 ] ] )
+          XCTFail()
+        }
+        catch {
+           
         }
 
         do
         {
-          _ = try MDBQuery( "product" ).insert( [ ["a": 1, "b": 2], ["a": 2, "b": 3 ] ] )
+          _ = try MDBQueryV1( "product" ).insert( [ ["a": 1, "b": 2], ["a": 2, "b": 3 ] ] )
         }
         catch {
           XCTFail()
         }
 
     }
-
 }
-

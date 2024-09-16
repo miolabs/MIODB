@@ -15,8 +15,12 @@ public enum MDBError: Error
     case cantEndTransactionWhileNotInsideTransaction
     case invalidPoolID( _ poolID: String, functionName: String = #function)
     case createNotImplemented( functionName: String = #function )
+    case whereAlreadyDefined
+    case whereNotFound
+    case rootCanOnlyHaveGroupsOrOneLine
+    case usingDeprecatedFunctionWithNewFunctions
+    case notSupported( _ message: String )
 }
-
 
 extension MDBError: LocalizedError {
     public var errorDescription: String? {
@@ -29,8 +33,18 @@ extension MDBError: LocalizedError {
                 return "[MDBError] \(poolID) does not exists in MDBManager. Called from \"\(functionName)\"."
             case let .createNotImplemented(functionName):
                 return "[MDBError] create function not implemented in MDBConnection. Called from \"\(functionName)\"."
-        case let .general( message ):
-            return "[MDBError] \(message)."
+            case .whereAlreadyDefined:
+                    return "[MDBError] Where clause already defined."
+            case .whereNotFound:
+                return "[MDBError] Where clause not found."
+            case .rootCanOnlyHaveGroupsOrOneLine:
+                return "[MDBError] Root can only have groups or one line."
+            case .usingDeprecatedFunctionWithNewFunctions:
+                return "[MDBError] Using deprecated function with new functions."
+            case let .general( message ):
+                return "[MDBError] \(message)."
+            case let .notSupported( message ):
+                return "[MDBError] \(message)."
         }
     }
 }

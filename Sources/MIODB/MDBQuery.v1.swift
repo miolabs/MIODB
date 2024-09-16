@@ -1,0 +1,595 @@
+//
+//  MDBQuery.swift
+//  MDBPostgresSQL
+//
+//  Created by Javier Segura Perez on 28/12/2019.
+//  Copyright © 2019 Javier Segura Perez. All rights reserved.
+//
+
+import Foundation
+
+/*
+public enum QUERY_TYPE
+{
+    case UNKOWN
+    case SELECT
+    case SELECT_FOR_UPDATE
+    case INSERT
+    case MULTI_INSERT
+    case UPDATE
+    case MULTI_UPDATE
+    case DELETE
+    case UPSERT
+    case MULTI_UPSERT
+}
+
+
+public enum ORDER_BY_DIRECTION: String {
+    case ASC  = "ASC"
+    case DESC = "DESC"
+}
+
+
+struct OrderBy {
+    var field: String
+    var dir: ORDER_BY_DIRECTION = .ASC
+    
+    func raw ( ) -> String {
+        return field + " \(dir)"
+    }
+}
+
+public protocol MDBQueryProtocol
+{
+    func upsert( table: String, values: [(key:String,value:MDBValue)], conflict: String, returning: [String] ) -> String?
+    // func multi_upsert( table: String, keys: [(key:String,value:MDBValue)], values: [[(key:String,value:MDBValue)]], conflict: String, returning: [String] ) -> String?
+}
+*/
+
+public class MDBQueryV1: MDBQueryWhereV1 {
+
+    // In some cases like "WHERE IN ()" we can predict the query will not return values
+    public var willBeEmpty: Bool = false
+    public var table: String = ""
+    public var queryType: QUERY_TYPE = .UNKOWN
+    var _selectFields: [ String ] = []
+    public var values: MDBValues = [:]
+    public var multiValues: [MDBValues] = []
+    var _returning: [String] = []
+    var _limit: Int32 = 0
+    var _offset: Int32 = 0
+    var order: [ OrderBy ] = []
+    var joins: [ JoinV1 ] = []
+    var _group_by: [ String ] = []
+    var on_conflict: String = ""
+    var distinct_on: [String] = []
+    public var _alias: String? = nil
+    var unitTest: Bool = false
+    
+    public var delegate: MDBQueryProtocol? = nil
+    
+    public init( _ table: String ) {
+        self.table = table
+    }
+    
+    public func alias ( _ alias_name: String ) { _alias = alias_name }
+    func aliasRaw ( ) -> String { return _alias == nil ? "" : "AS \(_alias!)" }
+    
+    public static func beginTransactionStament() -> String { return( "BEGIN TRANSACTION" ) }
+    public static func commitTransactionStament() -> String { return( "COMMIT TRANSACTION" ) }
+    
+    public func returning ( _ args: String... ) -> MDBQueryV1 {
+        for field in args {
+            _returning.append( MDBValue( fromTable: field ).value )
+        }
+        
+        return self
+    }
+    
+    func returningRaw ( ) -> String
+    {
+        return _returning.isEmpty ? "" : "RETURNING " + _returning.joined( separator: "," )
+    }
+    
+    
+    @discardableResult
+    public func select ( _ args: Any... ) -> MDBQueryV1 {
+        for field in args {
+            let select_field: MDBValue = field is MDBValue ? field as! MDBValue : MDBValue( fromTable: field as! String )
+            
+            _selectFields.append( select_field.value )
+        }
+                
+        queryType = .SELECT
+
+        return self
+    }
+
+    @discardableResult
+    public func select_for_update ( _ args: Any... ) -> MDBQueryV1 {
+        select( args )
+        queryType = .SELECT_FOR_UPDATE
+
+        return self
+    }
+
+    public func selectFieldsRaw ( ) -> String {
+        return _selectFields.isEmpty ? "*" : _selectFields.joined( separator: "," )
+    }
+    
+
+    
+    public func update ( _ val: [String:Any?] ) throws -> MDBQueryV1 {
+        queryType = .UPDATE
+        self.values = try toValues( val )
+        return self
+    }
+    
+    public func insert ( _ val: [String:Any?] ) throws -> MDBQueryV1 {
+        queryType = .INSERT
+        self.values = try toValues( val )
+        return self
+    }
+    
+    public func upsert ( _ val: [String:Any?], _ conflict: String ) throws -> MDBQueryV1 {
+        queryType = .UPSERT
+        self.values = try toValues( val )
+        self.on_conflict = conflict
+        return self
+    }
+
+    public func upsert ( _ val: [[String:Any?]], _ conflict: String ) throws -> MDBQueryV1 {
+        queryType = .MULTI_UPSERT
+        self.multiValues = try val.map{ try toValues( $0 ) }
+        self.on_conflict = conflict
+        return self
+    }
+
+    
+    public func insert ( _ val: [[String:Any?]] ) throws -> MDBQueryV1 {
+        queryType = .MULTI_INSERT
+        self.multiValues = try val.map{ try toValues( $0 ) }
+        try check_all_rows_has_same_keys( )
+        return self
+    }
+    
+    func check_all_rows_has_same_keys ( ) throws
+    {
+        if multiValues.isEmpty {
+            return
+        }
+        
+        let keys = Set( multiValues[ 0 ].keys )
+        
+        for i in 1..<multiValues.count {
+            let row_keys = Set( multiValues[ i ].keys )
+            let cnt = keys.intersection( keys ).count
+            
+            if cnt != keys.count || row_keys.count != cnt {
+                throw MDBError.general( "The inserted dictionary does not have the same keys: \(row_keys) vs first row keys: \(keys)" )
+            }
+        }
+    }
+
+    
+    public func update ( _ val: [[String:Any?]], _ fields: [String] ) throws -> MDBQueryV1 {
+        queryType = .MULTI_UPDATE
+        self.multiValues = try val.map{ try toValues( $0 ) }
+        try check_all_rows_has_same_keys( )
+
+        for f in fields {
+            let without_casting = f.components(separatedBy: "::")
+            let casting = without_casting.count > 1 ? "::\(without_casting[ 1 ])" : ""
+            try andWhere( "\(table).\(without_casting[0])", MDBValue( raw: "s.\"\(without_casting[0])\"\(casting)" ) )
+        }
+        
+        return self
+    }
+
+    
+    public func delete ( ) -> MDBQueryV1 {
+        queryType = .DELETE
+        return self
+    }
+    
+    
+    
+    //
+    // DISTINCT ON
+    //
+    
+    @discardableResult
+    public func distinctOn ( _ cols: [String] ) -> MDBQueryV1 {
+        distinct_on = cols
+        return self
+    }
+    
+    public func distinctOnRaw ( ) -> String {
+        return distinct_on.count == 0 ?
+                 ""
+               : "distinct on (" + MDBValue( fromTable:distinct_on.joined( separator: "," ) ).value + ") "
+    }
+    
+    //
+    // WHERE
+    //
+    
+    @discardableResult
+    public func beginGroup ( ) -> MDBQueryV1 {
+        super.begin_group()
+        return self
+    }
+
+    @discardableResult
+    public func endGroup ( ) -> MDBQueryV1 {
+        super.end_group()
+
+        return self ;
+    }
+    
+    func whereRaw ( ) -> String {
+        return _whereCond != nil ? "WHERE " + _whereCond!.raw( ) : ""
+    }
+
+    @discardableResult
+    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> MDBQueryV1 {
+        try super.add_where_line( where_op, field, op, value )
+
+        return self
+    }
+
+    @discardableResult
+    public func andWhereRaw ( _ raw: String ) -> MDBQueryV1 {
+        return try! addWhereLine( .AND, "", WHERE_LINE_OPERATOR.RAW, MDBValue.init(raw: raw) )
+    }
+
+    @discardableResult
+    public func orWhereRaw ( _ raw: String ) -> MDBQueryV1 {
+        return try! addWhereLine( .OR, "", WHERE_LINE_OPERATOR.RAW, MDBValue.init(raw: raw) )
+    }
+
+    @discardableResult
+    public func andWhereNULL ( _ field: String ) -> MDBQueryV1 {
+        return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS, try! MDBValue( nil ) )
+    }
+
+    @discardableResult
+    public func orWhereNULL ( _ field: String ) throws -> MDBQueryV1 {
+        return try! addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IS, try! MDBValue( nil ) )
+    }
+
+    @discardableResult
+    public func andWhereNotNULL ( _ field: String ) -> MDBQueryV1 {
+        return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IS_NOT, try! MDBValue( nil ) )
+    }
+
+    @discardableResult
+    public func orWhereNotNULL ( _ field: String ) -> MDBQueryV1 {
+        return try! addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IS_NOT, try! MDBValue( nil ) )
+    }
+
+    @discardableResult
+    public func andWhereIN ( _ field: String, _ vals: [Any] ) throws -> MDBQueryV1 {
+        return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.IN, try MDBValue.fromValue( vals ) )
+    }
+
+    @discardableResult
+    public func andWhereNotIN ( _ field: String, _ vals: [Any] ) throws -> MDBQueryV1 {
+        return try! addWhereLine( .AND, field, WHERE_LINE_OPERATOR.NOT_IN, try MDBValue.fromValue( vals ) )
+    }
+
+    @discardableResult
+    public func orWhereIN ( _ field: String, _ vals: [Any] ) throws -> MDBQueryV1 {
+        return try addWhereLine( .OR, field, WHERE_LINE_OPERATOR.IN, try MDBValue.fromValue( vals ) )
+    }
+
+    @discardableResult
+    public func orWhereNotIN ( _ field: String, _ vals: [Any] ) throws -> MDBQueryV1 {
+        return try addWhereLine( .OR, field, WHERE_LINE_OPERATOR.NOT_IN, try MDBValue.fromValue( vals ) )
+    }
+
+    @discardableResult
+    public func andWhere ( _ field: String, _ value: Any ) throws -> MDBQueryV1 {
+        return try addWhereLine( .AND, field, .EQ, value )
+    }
+
+    @discardableResult
+    public func andWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) throws -> MDBQueryV1 {
+        return try addWhereLine( .AND, field, op, value )
+    }
+
+    @discardableResult
+    public func orWhere ( _ field: String, _ value: Any ) throws -> MDBQueryV1 {
+        return try addWhereLine( .OR, field, .EQ, value )
+    }
+    
+    @discardableResult
+    public func orWhere ( _ field: String, _ op: WHERE_LINE_OPERATOR, _ value: Any ) throws -> MDBQueryV1 {
+        return try addWhereLine( .OR, field, op, value )
+    }
+
+    //
+    // ORDER BY
+    //
+    
+    @discardableResult
+    public func groupBy ( _ field: String, _ dir: ORDER_BY_DIRECTION = .ASC ) -> MDBQueryV1 {
+        _group_by.append( field )
+        return self
+    }
+    
+    
+    func groupRaw ( ) -> String {
+        return _group_by.count > 0 ? "GROUP BY " + _group_by.joined(separator: ",") : ""
+    }
+    
+
+    //
+    // ORDER BY
+    //
+    
+    @discardableResult
+    public func orderBy ( _ field: String, _ dir: ORDER_BY_DIRECTION = .ASC ) -> MDBQueryV1 {
+        order.append( OrderBy( field: MDBValue( fromTable: field ).value, dir: dir ) )
+        return self
+    }
+    
+    func orderRaw ( ) -> String {
+        return order.isEmpty ? "" : "ORDER BY " + order.map{ $0.raw( ) }.joined( separator: "," )
+    }
+
+    
+    //
+    // LIMIT
+    //
+
+    public func limit ( _ value: Int32 ) -> MDBQueryV1
+    {
+        _limit = value ;
+        return self
+    }
+    
+    func limitRaw ( ) -> String { return _limit > 0 ? "LIMIT " + String( _limit ) : "" }
+    
+    
+    //
+    // OFFSET
+    //
+
+    public func offset ( _ value: Int32 ) -> MDBQueryV1 { _offset = value ; return self }
+    func offsetRaw ( ) -> String { return _offset > 0 ? "OFFSET " + String( _offset ) : "" }
+    
+
+    
+    @discardableResult
+    public func join ( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil, _ cb: @escaping ( JoinV1 		) throws -> Void = { _ in } ) throws -> MDBQueryV1 {
+        let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
+        let to_table   = MDBValue( fromTable: to ).value
+        let new_join   = JoinV1( joinType: joinType, table: table, fromTable: from_table, toTable: to_table, asWhat: as_what )
+        let join_already_done = joins.filter{ j in j.raw( ) == new_join.raw( ) }.count > 0
+        
+        if !join_already_done {
+          joins.append( new_join )
+        }
+        
+        try cb( new_join )
+        
+        return self
+    }
+
+    
+    @discardableResult
+    public func join ( table: String, json: String, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil, _ cb: @escaping ( JoinJSONV1 ) throws -> Void = { _ in }  ) throws -> MDBQueryV1 {
+        let to_table   = MDBValue( fromTable: to ).value
+        let new_join   = JoinJSONV1( joinType: joinType, table: table, json: json, toTable: to_table, asWhat: as_what )
+        let join_already_done = joins.filter{ j in j.raw( ) == new_join.raw( ) }.count > 0
+        
+        if !join_already_done {
+          joins.append( new_join )
+        }
+        
+        try cb( new_join )
+        
+        return self
+    }
+
+    
+    func joinRaw ( ) -> String {
+        return joins.map{ $0.raw( ) }.joined( separator: " " )
+    }
+
+    public func property_alias ( _ relation_name: String ) -> String {
+        let join_already_done = joins.filter{ j in j.table == relation_name }
+        
+        return join_already_done.first?.asWhat! ?? relation_name
+    }
+    
+    
+    public func mergeValues ( _ moreValues: [ String: Any? ] ) throws -> MDBQueryV1 {
+        values.merge( try toValues( moreValues ) ) { (_, new) in new }  // in case of collision, the value in the parameter dictionary replaces the one in values
+        return self
+    }
+    
+    public func rawQuery () -> String {
+        switch queryType {
+            case .UNKOWN:
+                 return ""
+            case .SELECT, .SELECT_FOR_UPDATE:
+                 let for_update = queryType == .SELECT_FOR_UPDATE ? " FOR UPDATE" : ""
+                 return composeQuery( [ "SELECT " + distinctOnRaw( ) + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
+                                      , aliasRaw( )
+                                      , joinRaw( )
+                                      , whereRaw( )
+                                      , groupRaw( )
+                                      , orderRaw( )
+                                      , limitRaw( )
+                                      , offsetRaw( )
+                                      , for_update
+                                      ] )
+                 
+            case .UPSERT:
+                let sorted_values = sortedValues()
+                let t = MDBValue( fromTable: table ).value
+
+                return sorted_values.isEmpty ? ""
+                     : delegate?.upsert( table: t, values: sorted_values, conflict: on_conflict, returning: _returning ) ??
+                       composeQuery( [ "INSERT INTO " + t
+                                     , valuesFieldsRaw( sorted_values )
+                                     , "VALUES"
+                                     , valuesValuesRaw( sorted_values )
+                                     , "ON CONFLICT (" + on_conflict + ") DO UPDATE SET"
+                                     , valuesRaw()
+                                     , returningRaw()
+                                     ] )
+            case .MULTI_UPSERT:
+                 let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
+                 return sorted_values.isEmpty ? ""
+//                      : delegate?.multi_upsert( table: table, keys: sorted_values, values: multiValuesKeyValue( sorted_values ), conflict: on_conflict, returning: _returning ) ??
+                      : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
+                                      , valuesFieldsRaw( sorted_values )
+                                      , "VALUES"
+                                      , multiValuesRaw( sorted_values )
+                                      , "ON CONFLICT (" + on_conflict + ") DO UPDATE SET"
+                                      , multiExcludedRaw( sorted_values )
+                                      , returningRaw()
+                                      ] )
+
+            case .INSERT:
+                 let sorted_values = sortedValues()
+                 
+                 return sorted_values.isEmpty ? ""
+                      : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
+                                      , valuesFieldsRaw( sorted_values )
+                                      , "VALUES"
+                                      , valuesValuesRaw( sorted_values )
+                                      , whereRaw( )
+                                      , returningRaw()
+                                      ] )
+            case .MULTI_INSERT:
+                 let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
+                 return sorted_values.isEmpty ? ""
+                      : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
+                                      , valuesFieldsRaw( sorted_values )
+                                      , "VALUES"
+                                      , multiValuesRaw( sorted_values )
+                                      , whereRaw( )
+                                      , returningRaw()
+                                      ] )
+            case .UPDATE:
+                 return values.isEmpty ? ""
+                      : composeQuery( [ "UPDATE " + MDBValue( fromTable: table ).value + " SET"
+                                      , valuesRaw( )
+                                      , whereRaw( )
+                                      , returningRaw()
+                                      ] )
+            case .MULTI_UPDATE:
+                let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
+
+                return sorted_values.isEmpty ? ""
+                     : composeQuery( [ "UPDATE " + MDBValue( fromTable: table ).value + " SET"
+                                     , multiUpdateValuesRaw( )
+                                     , "FROM (SELECT * FROM (VALUES "
+                                     , multiValuesRaw( sorted_values )
+                                     , ") AS t(\( sorted_values.map{ "\"\($0.key)\"" }.joined(separator: ", ") ))) AS s"
+                                     , whereRaw( )
+                                     , returningRaw()
+                                     ] )
+
+            case .DELETE:
+                 return composeQuery( [ "DELETE FROM " + MDBValue( fromTable: table ).value
+                                      , whereRaw( )
+                                      , returningRaw()
+                                      ] )
+
+        }
+    }
+
+    // toma un array de strings opcionales, filtra las que son nil o vacías, hace un casting forzado a lista de strings "normales" y une las restantes en una sola cadena
+    func composeQuery ( _ parts: [String?] ) -> String {
+        return (parts.filter{ $0 != nil && $0 != "" } as! [String]).joined(separator: " " )
+    }
+    
+    public func valuesRaw ( ) -> String {
+        var key_eq_values: [String] = []
+
+        for (key,value) in sortedValues() {
+            key_eq_values.append( "\"" + key + "\"=" + value.value )
+        }
+        
+        return key_eq_values.joined(separator: ",")
+    }
+
+    public func multiUpdateValuesRaw ( ) -> String {
+        var key_eq_values: [String] = []
+
+        if !multiValues.isEmpty {
+            for (key,_) in sortedValues( multiValues[ 0 ] ) {
+                key_eq_values.append( "\"\(key)\"= s.\"\(key)\"")
+            }
+        }
+        
+        return key_eq_values.joined(separator: ",")
+    }
+    
+    public func test() -> MDBQueryV1 {
+        unitTest = true
+        return self
+    }
+    
+    // Unfortunatelly dictionaries do not respect the declaration order, so we need to sorted them for testing
+    func sortedValues ( _ v: MDBValues? = nil ) -> [(key:String,value:MDBValue)] {
+        #if testing
+        return ( v == nil ? values : v! ).sorted { (v1,v2) in v1.key < v2.key }
+        #else
+        if (unitTest){ // Unfortunatelly dictionaries do not respect the declaration order, so we need to sorted them for testing
+            return ( v == nil ? values : v! ).sorted { (v1,v2) in v1.key < v2.key }
+        }
+        return (v ?? values).map { (key, value) in (key, value) }
+        #endif
+    }
+    
+    func valuesFieldsRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+        return  "(" + (sorted_values.map{ "\"\($0.key)\"" }).joined(separator: ",") + ")"
+    }
+
+    func valuesValuesRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+        return "(" + (sorted_values.map{ $0.value.value }).joined(separator: ",") + ")"
+    }
+
+//
+//    func multiValuesKeyValue ( _ sorted_values: [(key:String,value:MDBValue)] ) -> [[(key:String,value:Any)]] {
+//        // THIS IS UGLY: During the migration it happens that some entities do have relations and other do not.
+//        // When using a multi-insert, the ones that has relations makes "spaces to fill-in" for the other entities
+//        func def_value ( col: String ) -> String {
+//            return col.starts(with: "_relation") ? "''" : "null"
+//        }
+//        
+//        return  multiValues.map{ row in
+//            sorted_values.map{ col in (key: col.key, value:(row[ col.key ]?.value ?? def_value(col: col.key) )) }
+//           }
+//    }
+//
+    
+    func multiValuesRaw ( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+        // THIS IS UGLY: During the migration it happens that some entities do have relations and other do not.
+        // When using a multi-insert, the ones that has relations makes "spaces to fill-in" for the other entities
+        func def_value ( col: String ) -> String {
+            return col.starts(with: "_relation") ? "''" : "null"
+        }
+        
+        return  multiValues.map{ row in
+             "(" + sorted_values.map{ col in (row[ col.key ]?.value ?? def_value(col: col.key) ) }.joined(separator: "," ) + ")"
+           }.joined(separator: ",")
+    }
+    
+    func multiExcludedRaw ( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+        let conflict_keys = Set( on_conflict.components(separatedBy: ",").map{ $0.trimmingCharacters(in: .whitespacesAndNewlines) } )
+        
+        return sorted_values.filter{ col in !conflict_keys.contains( col.key ) }
+                            .map{ col in ("\"\(col.key)\" = excluded.\"\(col.key)\"" ) }.joined(separator: ",")
+    }
+    
+    func multi_insert_cursor ( ) {
+        
+    }
+}

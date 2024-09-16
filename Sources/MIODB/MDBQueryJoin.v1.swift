@@ -7,15 +7,16 @@
 
 import Foundation
 
+/*
 public enum JOIN_TYPE: String {
     case INNER = "INNER"
     case LEFT  = "LEFT"
     case RIGHT = "RIGHT"
     case FULL  = "FULL"
 }
+*/
 
-public class Join {
-    var _where: MDBQueryWhere = MDBQueryWhere( )
+public class JoinV1: MDBQueryWhereV1 {
     var joinType: JOIN_TYPE
     var table: String
     var fromTable: String
@@ -35,19 +36,19 @@ public class Join {
     }
     
     @discardableResult
-    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> Join {
-        try _where.add_where_line( where_op, field, op, value )
+    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> JoinV1 {
+        try super.add_where_line( where_op, field, op, value )
 
         return self
     }
     
     func rawWhere ( ) -> String {
-        return _where._whereCond != nil ? " " + _where._whereCond!.raw( first_line_hides_operator: false ) : ""
+        return _whereCond != nil ? " " + _whereCond!.raw( first_line_hides_operator: false ) : ""
     }
 }
 
 
-public class JoinJSON: Join {
+public class JoinJSONV1: JoinV1 {
     init ( joinType: JOIN_TYPE, table: String, json: String, toTable: String, asWhat: String? = nil ) {
         super.init( joinType: joinType, table: table, fromTable: json, toTable: toTable, asWhat: asWhat )
     }

@@ -46,7 +46,16 @@ public struct MDBWhereLine : MDBWhereString {
     public var where_op:WHERE_OPERATOR = .AND
     public var field:String
     public var op: WHERE_LINE_OPERATOR
-    public var value: String
+    public var mdbValue: MDBValue
+    public var value: String = ""
+
+    init( where_op: WHERE_OPERATOR, field: String, op: WHERE_LINE_OPERATOR, mdbValue: MDBValue ) {
+        self.where_op = where_op
+        self.field = field
+        self.op = op
+        self.mdbValue = mdbValue
+        self.value = mdbValue.value ?? ""
+    }
     
     public func raw ( firstLine: Bool) -> String {
         if (where_op == .UNDEF) {  // v2
@@ -125,21 +134,6 @@ public class MDBWhereGroup : MDBWhereString {
     // }
     public func raw ( first_line_hides_operator: Bool = true ) -> String {
         if (_group_where_op != .UNDEF) {  // v2
-            print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-            print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-            print("raw first_line_hides_operator: \(first_line_hides_operator)")
-            print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-            // let dontCareIguess = true
-            // var ret = ""
-            // if (lines.count > 0) {
-            //     ret = "(" + lines[0].raw(firstLine: dontCareIguess)
-            //     for i in 1..<lines.count {
-            //         ret += " " + ( _group_where_op.rawValue ) + " " 
-            //         ret += lines[i].raw(firstLine: dontCareIguess)
-            //     }
-            //     ret += ")"
-            // }
-            // return ret;
             return ""
         }
         else {  // v1 or root group
@@ -206,7 +200,7 @@ public class MDBQueryWhere {
             whereCond( ).push( MDBWhereLine( where_op: where_op
                                         , field: field is String ? MDBValue(fromTable: field as! String).value : (field as! MDBValue).value
                                         , op: op
-                                        , value: try MDBValue.fromValue( value ).value ) )
+                                        , mdbValue: try MDBValue.fromValue( value ) ) )
         }
         else {
             // v.2: condition lines can only be inside groups or in the first level if nothing else is there
@@ -217,7 +211,7 @@ public class MDBQueryWhere {
                 whereCond( ).push( MDBWhereLine( where_op: .UNDEF
                                         , field: field is String ? MDBValue(fromTable: field as! String).value : (field as! MDBValue).value
                                         , op: op
-                                        , value: try MDBValue.fromValue( value ).value ) )
+                                        , mdbValue: try MDBValue.fromValue( value ) ) )
             }
         }
     }

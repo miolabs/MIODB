@@ -67,12 +67,14 @@ open class MDBQuery {
     public var unitTest: Bool = false
     public var usingQueryBuilderV2: Bool = false
     
-    public var delegate: MDBQueryProtocol? = nil  // used by Oracle specialization only. Try to move to the QueryEncoder  xxx
+    public var delegate: MDBQueryProtocol? = nil  // used by Oracle specialization only. Try to move to the QueryEncoder? 
     
     public init( _ table: String ) {
         self.table = table
     }
     
+    // xxx que hacemos con los join? No pasan los tests
+
     // xxx y esto ??? 
     public static func beginTransactionStament() -> String { return( "BEGIN TRANSACTION" ) }
     public static func commitTransactionStament() -> String { return( "COMMIT TRANSACTION" ) }

@@ -30,8 +30,8 @@ public enum ORDER_BY_DIRECTION: String {
 
 
 public struct OrderBy {
-    var field: String
-    var dir: ORDER_BY_DIRECTION = .ASC
+    public var field: String
+    public var dir: ORDER_BY_DIRECTION = .ASC
     
     func raw ( ) -> String {
         return field + " \(dir)"
@@ -74,6 +74,7 @@ open class MDBQuery {
     }
     
     // xxx que hacemos con los join? No pasan los tests
+    // xxx el grupo padre en los nuevos where solo puede tener un hijo: otro grupo o una linea unica. Enforce this en MIODB?
 
     // xxx y esto ??? 
     public static func beginTransactionStament() -> String { return( "BEGIN TRANSACTION" ) }

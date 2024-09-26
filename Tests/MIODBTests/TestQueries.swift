@@ -41,19 +41,7 @@ class TestDBQueries: XCTestCase
         //              SELECT * FROM "product" INNER JOIN "productCategory" ON "productCategory"."id" = "category"
     }
 
-    func testTwoJoin() throws {
-        let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( "*" )
-                                     .join( table: "ProductModifier", to: "productModifier" )
-                                     .join( table: "ProductCategoryModifier", from: "productModifier", to: "productModifierCategory" )
-                                     ).rawQuery( )
-
-       XCTAssertTrue(
-            (query == "SELECT * FROM \"product\" INNER JOIN \"ProductModifier\" ON \"ProductModifier\".\"id\" = \"product\".\"productModifier\" INNER JOIN \"ProductCategoryModifier\" ON \"ProductCategoryModifier\".\"id\" = \"productModifier\".\"productModifierCategory\"" )
-          , query )
-        // Actual behaviour:
-        //             SELECT * FROM "product" INNER JOIN "ProductModifier" ON "ProductModifier"."id" = "productModifier" INNER JOIN
-        //        "ProductCategoryModifier" ON "productModifier" = "productModifierCategory"
-    }
+   
 
     func testSelect ( ) throws {
         let query = MDBQueryEncoderSQL(
@@ -264,6 +252,21 @@ class TestDBQueries: XCTestCase
         XCTAssert( query2 == "SELECT * FROM \"product\" FULL JOIN \"modifier\" ON \"modifier\".\"identifier\" = \"product\".\"productModifier\"", query2 )
     }
 
+     func testTwoJoin() throws {
+        let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( "*" )
+                                     .join( table: "ProductModifier", to: "productModifier" )
+                                     .join( table: "ProductCategoryModifier", from: "productModifier", to: "productModifierCategory" )
+                                     ).rawQuery( )
+
+       XCTAssertTrue(
+            (query == "SELECT * FROM \"product\" INNER JOIN \"ProductModifier\" ON \"ProductModifier\".\"id\" = \"product\".\"productModifier\" INNER JOIN \"ProductCategoryModifier\" ON \"productModifier\" = \"product\".\"productModifierCategory\"" )
+             //ON \"ProductCategoryModifier\".\"id\" = \"productModifier\".\"productModifierCategory\"" )
+          , query )
+        // Actual behaviour:
+        //             SELECT * FROM "product" INNER JOIN "ProductModifier" ON "ProductModifier"."id" = "productModifier" INNER JOIN
+        //        "ProductCategoryModifier" ON "productModifier" = "productModifierCategory"
+    }
+
     
      func testOrder ( ) throws {
          let query = MDBQueryEncoderSQL(MDBQuery( "product" ).orderBy( "name", .ASC )
@@ -273,15 +276,13 @@ class TestDBQueries: XCTestCase
          // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
          XCTAssert( query == "SELECT * FROM \"product\" ORDER BY \"name\" ASC,\"surname\" DESC", query )
      }
-
     
-    func testDoubleJoin ( ) throws {
+    func testDontRepeatJoins ( ) throws {
         let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( ).join(table: "modifier", to: "prod").join(table: "modifier", to: "prod")).rawQuery( ) ;
         
         // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
-        XCTAssert( query == "SELECT * FROM \"product\" INNER JOIN \"modifier\" ON \"modifier\".\"id\" = \"prod\"", query )
+        XCTAssert( query == "SELECT * FROM \"product\" INNER JOIN \"modifier\" ON \"modifier\".\"id\" = \"product\".\"prod\"", query )
     }
-
     
     func testGroups ( ) throws {
         let place_entities = ["A","B"]

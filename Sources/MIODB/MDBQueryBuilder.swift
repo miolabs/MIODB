@@ -143,8 +143,13 @@ public extension MDBQuery {
 
     @discardableResult
     func join ( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil, _ cb: @escaping ( Join 		) throws -> Void = { _ in } ) throws -> MDBQuery {
-        let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
-        let to_table   = MDBValue( fromTable: to ).value
+        // let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
+        // let to_table   = MDBValue( fromTable: to ).value
+        let from_table = from != nil ?  MDBValue( fromTable: from! ).value :  // we use what we get if something comes in the 'from'
+                                        MDBValue( fromTable: table + ".id" ).value
+        let to_table   = to.contains(".") ? MDBValue( fromTable: to ).value : // we use what we get if it is a table.field format
+                                            MDBValue( fromTable: self.table ).value + "." + MDBValue( fromTable: to ).value
+
         let new_join   = Join( joinType: joinType, table: table, fromTable: from_table, toTable: to_table, asWhat: as_what )
         let join_already_done = joins.filter{ j in j.raw( ) == new_join.raw( ) }.count > 0
         

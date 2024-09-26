@@ -15,12 +15,12 @@ public enum JOIN_TYPE: String {
 }
 
 public class Join {
-    var _where: MDBQueryWhere = MDBQueryWhere( )
-    var joinType: JOIN_TYPE
-    var table: String
-    var fromTable: String
-    var toTable: String
-    var asWhat: String? = nil
+    public var _where: MDBQueryWhere = MDBQueryWhere( )
+    public var joinType: JOIN_TYPE
+    public var table: String
+    public var fromTable: String
+    public var toTable: String
+    public var asWhat: String? = nil
     
     init ( joinType: JOIN_TYPE, table: String, fromTable: String, toTable: String, asWhat: String? = nil ) {
         self.joinType  = joinType
@@ -42,7 +42,9 @@ public class Join {
     }
     
     func rawWhere ( ) -> String {
-        return _where._whereCond != nil ? " " + _where._whereCond!.raw( first_line_hides_operator: false ) : ""
+        let gotClauses = _where._whereCond != nil && _where._whereCond!.lines.count > 0
+        let ret = gotClauses ? " " + _where._whereCond!.raw( first_line_hides_operator: false ) : ""
+        return ret
     }
 }
 

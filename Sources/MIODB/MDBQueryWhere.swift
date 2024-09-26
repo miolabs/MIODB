@@ -54,7 +54,7 @@ public struct MDBWhereLine : MDBWhereString {
         self.field = field
         self.op = op
         self.mdbValue = mdbValue
-        self.value = mdbValue.value ?? ""
+        self.value = mdbValue.value 
     }
     
     public func raw ( firstLine: Bool) -> String {

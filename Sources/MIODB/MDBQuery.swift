@@ -73,23 +73,21 @@ open class MDBQuery {
         self.table = table
     }
     
-    // xxx que hacemos con los join? No pasan los tests
+    
     // xxx el grupo padre en los nuevos where solo puede tener un hijo: otro grupo o una linea unica. Enforce this en MIODB?
 
-    // xxx y esto ??? 
     public static func beginTransactionStament() -> String { return( "BEGIN TRANSACTION" ) }
     public static func commitTransactionStament() -> String { return( "COMMIT TRANSACTION" ) }
     public static func rollbackTransactionStament() -> String { return( "ROLLBACK TRANSACTION" ) }
     
    
-    // xxx y esto? 
+    // Not used inside MIODB 
     public func property_alias ( _ relation_name: String ) -> String {
         let join_already_done = joins.filter{ j in j.table == relation_name }
         
         return join_already_done.first?.asWhat! ?? relation_name
     }
     
-    // xxx y esto?
     public func mergeValues ( _ moreValues: [ String: Any? ] ) throws -> MDBQuery {
         values.merge( try toValues( moreValues ) ) { (_, new) in new }  // in case of collision, the value in the parameter dictionary replaces the one in values
         return self

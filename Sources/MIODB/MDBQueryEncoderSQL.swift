@@ -14,16 +14,30 @@ public class MDBQueryEncoderSQL {
         self.mdbquery = mdbquery
     }
 
-    func aliasRaw ( ) -> String { return mdbquery._alias == nil ? "" : "AS \(mdbquery._alias!)" }    
+    func tableAliasRaw ( ) -> String { return mdbquery._tableAlias == nil ? "" : "AS \(mdbquery._tableAlias!)" }    
 
     func returningRaw ( ) -> String
     {
         return mdbquery._returning.isEmpty ? "" : "RETURNING " + mdbquery._returning.joined( separator: "," )
     }
 
-
     public func selectFieldsRaw ( ) -> String {
-        return mdbquery._selectFields.isEmpty ? "*" : mdbquery._selectFields.joined( separator: "," )
+        //return mdbquery._selectFields.isEmpty ? "*" : mdbquery._selectFields.joined( separator: "," )
+        var strFields : [String] = []
+        for field in mdbquery._selectFields {
+            switch field {
+                case let f as String:
+                    strFields.append( f )
+                case let f as SelectType:
+                    switch f {
+                        case .alias( let field, let as_what ):
+                            strFields.append("\"" + field + "\"" + " AS " + "\"" + as_what + "\"")
+                    }
+                default:
+                    break
+            }
+        }
+        return strFields.isEmpty ? "*" : strFields.joined( separator: "," )
     }
     
     public func distinctOnRaw ( ) -> String {
@@ -146,7 +160,7 @@ public class MDBQueryEncoderSQL {
             case .SELECT, .SELECT_FOR_UPDATE:
                  let for_update = mdbquery.queryType == .SELECT_FOR_UPDATE ? " FOR UPDATE" : ""
                  return composeQuery( [ "SELECT " + distinctOnRaw( ) + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: mdbquery.table ).value
-                                      , aliasRaw( )
+                                      , tableAliasRaw( )
                                       , joinRaw( )
                                       , whereRaw( )
                                       , groupRaw( )

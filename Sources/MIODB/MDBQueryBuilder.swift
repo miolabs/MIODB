@@ -2,24 +2,43 @@
 
 import Foundation
 
+
+public func alias ( _ field: String, _ as_what: String ) -> SelectType {
+        return SelectType.alias( field, as_what )
+    }
 public extension MDBQuery {
 
-    func alias ( _ alias_name: String ) -> MDBQuery { _alias = alias_name; return self }
+    func alias ( _ alias_name: String ) throws -> MDBQuery { 
+        throw MDBError.general( "alias is deprecated for clarity. Use tableAlias" )
+    }
+    
+    func tableAlias ( _ alias_name: String ) -> MDBQuery { 
+        _tableAlias = MDBValue( fromTable: alias_name).value
+        return self 
+    }
 
-     func returning ( _ args: String... ) -> MDBQuery {
+    func returning ( _ args: String... ) -> MDBQuery {
         for field in args {
             _returning.append( MDBValue( fromTable: field ).value )
         }
-        
         return self
     }
+
+    
 
     @discardableResult
     func select ( _ args: Any... ) -> MDBQuery {
         for field in args {
-            let select_field: MDBValue = field is MDBValue ? field as! MDBValue : MDBValue( fromTable: field as! String )
-            
-            _selectFields.append( select_field.value )
+            if field is MDBValue || field is String {
+                let select_field: MDBValue = field is MDBValue ? field as! MDBValue : MDBValue( fromTable: field as! String )
+                _selectFields.append( select_field.value )
+            }
+            else if field is SelectType {
+                _selectFields.append( field )
+                // switch field as! SelectType {
+                //     case .alias(let field, let as_what):
+                // }
+            }
         }
                 
         queryType = .SELECT

@@ -86,7 +86,6 @@ class TestDBHelperV1: XCTestCase
         print("QUERY 2: \(query2_str)")
         
         XCTAssert( query2_str == "INSERT INTO \"product\" (\"extra\",\"modifier\",\"str\") VALUES ('world',15,'Hello')", query2_str )
-
     }
 
     

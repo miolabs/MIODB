@@ -22,6 +22,11 @@ public enum QUERY_TYPE
     case MULTI_UPSERT
 }
 
+public enum SelectType {
+    case alias(_ field:String, _ as_what:String)
+    //case count(field:String)
+}
+
 
 public enum ORDER_BY_DIRECTION: String {
     case ASC  = "ASC"
@@ -52,7 +57,8 @@ open class MDBQuery {
     public var table: String = ""
     public var queryType: QUERY_TYPE = .UNKOWN
     public var _where : MDBQueryWhere? //= MDBQueryWhere( )
-    public var _selectFields: [ String ] = []
+    //public var _selectFields: [ String ] = []
+    public var _selectFields: [ Any ] = []
     public var values: MDBValues = [:]
     public var multiValues: [MDBValues] = []
     public var _returning: [String] = []
@@ -63,7 +69,7 @@ open class MDBQuery {
     public var _group_by: [ String ] = []
     public var on_conflict: String = ""
     public var distinct_on: [String] = []
-    public var _alias: String? = nil
+    public var _tableAlias: String? = nil
     public var unitTest: Bool = false
     public var usingQueryBuilderV2: Bool = false
     
@@ -72,10 +78,7 @@ open class MDBQuery {
     public init( _ table: String ) {
         self.table = table
     }
-    
-    
-    // xxx el grupo padre en los nuevos where solo puede tener un hijo: otro grupo o una linea unica. Enforce this en MIODB?
-
+        
     public static func beginTransactionStament() -> String { return( "BEGIN TRANSACTION" ) }
     public static func commitTransactionStament() -> String { return( "COMMIT TRANSACTION" ) }
     public static func rollbackTransactionStament() -> String { return( "ROLLBACK TRANSACTION" ) }

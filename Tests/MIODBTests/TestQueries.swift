@@ -44,9 +44,7 @@ class TestDBQueries: XCTestCase
    
 
     func testSelect ( ) throws {
-        let query = MDBQueryEncoderSQL(
-                        MDBQuery( "product" ).select( )
-                    ).rawQuery( ) ;
+        let query = MDBQueryEncoderSQL(MDBQuery( "product" ).select()).rawQuery(); 
         
         XCTAssert( query == "SELECT * FROM \"product\"", query )
 
@@ -62,6 +60,28 @@ class TestDBQueries: XCTestCase
         let query4 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "product.*", "modifier.price AS mod_price" )).rawQuery( ) ;
         
         XCTAssert( query4 == "SELECT \"product\".*,\"modifier\".\"price\" AS \"mod_price\" FROM \"product\"", query4 )
+    }
+
+    func testAlias ( ) throws {
+        let query2 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( SelectType.alias("name", "n1"))).rawQuery( ) ;
+        
+        XCTAssert( query2 == "SELECT \"name\" AS \"n1\" FROM \"product\"", query2 )
+
+        let query3 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "name", SelectType.alias("price", "p1"))).rawQuery( ) ;
+        
+        XCTAssert( query3 == "SELECT \"name\",\"price\" AS \"p1\" FROM \"product\"", query3 )
+
+        let query4 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( alias("name", "n1"))).rawQuery( ) ;
+        
+        XCTAssert( query4 == "SELECT \"name\" AS \"n1\" FROM \"product\"", query4 )
+
+        let query5 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "name", alias("price", "p1"))).rawQuery( ) ;
+        
+        XCTAssert( query5 == "SELECT \"name\",\"price\" AS \"p1\" FROM \"product\"", query5 )
+
+        let query6 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( alias("name", "n1"), alias("price", "p1")).tableAlias("PR1")).rawQuery( ) ;
+        
+        XCTAssert( query6 == "SELECT \"name\" AS \"n1\",\"price\" AS \"p1\" FROM \"product\" AS \"PR1\"", query6 )
     }
 
 

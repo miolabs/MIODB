@@ -17,7 +17,7 @@ public enum MDBError: Error
     case createNotImplemented( functionName: String = #function )
     case whereAlreadyDefined
     case whereNotFound
-    case rootCanOnlyHaveGroupsOrOneLine
+    case rootCanOnlyHaveOneGroupOrLine
     case usingDeprecatedFunctionWithNewFunctions
     case notSupported( _ message: String )
 }
@@ -37,8 +37,8 @@ extension MDBError: LocalizedError {
                     return "[MDBError] Where clause already defined."
             case .whereNotFound:
                 return "[MDBError] Where clause not found."
-            case .rootCanOnlyHaveGroupsOrOneLine:
-                return "[MDBError] Root can only have groups or one line."
+            case .rootCanOnlyHaveOneGroupOrLine:
+                return "[MDBError] Root can only have one group or line."
             case .usingDeprecatedFunctionWithNewFunctions:
                 return "[MDBError] Using deprecated function with new functions."
             case let .general( message ):

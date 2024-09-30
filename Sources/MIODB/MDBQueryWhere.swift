@@ -179,8 +179,8 @@ public class MDBQueryWhere {
     
     @discardableResult
     public func begin_group (_ where_op: WHERE_OPERATOR = .UNDEF ) throws -> MDBQueryWhere {
-        if (where_op != .UNDEF && whereStack.count == 1 && _whereCond!.contains_MDBWhereLine( )) { // version 2 behaviour
-                throw MDBError.rootCanOnlyHaveGroupsOrOneLine
+        if (where_op != .UNDEF && whereStack.count == 1 && _whereCond!.lines.count > 0) { // version 2 behaviour
+                throw MDBError.rootCanOnlyHaveOneGroupOrLine
             }
         let grp = MDBWhereGroup( where_op )
         whereCond( ).push( grp )
@@ -205,7 +205,7 @@ public class MDBQueryWhere {
         else {
             // v.2: condition lines can only be inside groups or in the first level if nothing else is there
             if (whereStack.count == 1 && _whereCond!.lines.count > 0) {
-                throw MDBError.rootCanOnlyHaveGroupsOrOneLine
+                throw MDBError.rootCanOnlyHaveOneGroupOrLine
             }
             else {
                 whereCond( ).push( MDBWhereLine( where_op: .UNDEF

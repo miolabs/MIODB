@@ -56,13 +56,22 @@ class TestDBWhereGroups: XCTestCase
             XCTFail("Unexpected error: \(error)")
         }
     }
-
+   
     func testRootCanOnlyHaveGroupsOrASingleLine() throws {
         do
         {
             _ = try MDBQuery( "product" ).select().where().addCondition("a", .LT, 1).addCondition("b", .LT, 2)
             XCTFail("It should have thrown exception")
-        } catch MDBError.rootCanOnlyHaveGroupsOrOneLine {
+        } catch MDBError.rootCanOnlyHaveOneGroupOrLine {
+            XCTAssertTrue(true)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+        do
+        {
+            _ = try MDBQuery( "product" ).select().where().beginAndGroup().endGroup().beginAndGroup()
+            XCTFail("It should have thrown exception")
+        } catch MDBError.rootCanOnlyHaveOneGroupOrLine {
             XCTAssertTrue(true)
         } catch {
             XCTFail("Unexpected error: \(error)")
@@ -71,7 +80,7 @@ class TestDBWhereGroups: XCTestCase
         {
             _ = try MDBQuery( "product" ).select().where().beginAndGroup().endGroup().addCondition("a", .LT, 1)
             XCTFail("It should have thrown exception")
-        } catch MDBError.rootCanOnlyHaveGroupsOrOneLine {
+        } catch MDBError.rootCanOnlyHaveOneGroupOrLine {
             XCTAssertTrue(true)
         } catch {
             XCTFail("Unexpected error: \(error)")
@@ -80,7 +89,7 @@ class TestDBWhereGroups: XCTestCase
         {
             _ = try MDBQuery( "product" ).select().where().addCondition("a", .LT, 1).beginOrGroup()
             XCTFail("It should have thrown exception")
-        } catch MDBError.rootCanOnlyHaveGroupsOrOneLine {
+        } catch MDBError.rootCanOnlyHaveOneGroupOrLine {
             XCTAssertTrue(true)
         } catch {
             XCTFail("Unexpected error: \(error)")

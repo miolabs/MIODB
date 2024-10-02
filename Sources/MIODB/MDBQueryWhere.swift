@@ -8,7 +8,7 @@
 import Foundation
 
 
-public enum WHERE_LINE_OPERATOR: String {
+public enum WhereLineOperator: String {
     case EQ = "="
     case NEQ = "!="
     case LT = "<"
@@ -27,7 +27,55 @@ public enum WHERE_LINE_OPERATOR: String {
     case BITWISE_OR = "|"
     case BITWISE_XOR = "#"
     case BITWISE_NOT = "~"
+    case equal
+    case notEqual
+    case lessThan
+    case lessThanOrEqual
+    case greaterThan
+    case greaterThanOrEqual
+    case notIn
+    case `in`
+    case `is`
+    case isNot
+    case like
+    case ilike
+    case jsonExistsIn
+    case raw
+    case bitwiseAnd
+    case bitwiseOr
+    case bitwiseXor
+    case bitwiseNot
+
+    var value: String {
+        switch self {
+            case .EQ, .NEQ, .LT, .LE, .GT, .GE, .NOT_IN, .IN, .IS, .IS_NOT, .LIKE, .ILIKE, 
+                .JSON_EXISTS_IN, .BITWISE_AND, .BITWISE_OR, .BITWISE_XOR, .BITWISE_NOT, .RAW:
+                return self.rawValue
+            case .equal: return "="
+            case .notEqual: return "!="
+            case .lessThan: return "<"
+            case .lessThanOrEqual: return "<="
+            case .greaterThan: return ">"
+            case .greaterThanOrEqual: return ">="
+            case .notIn: return "NOT IN"
+            case .in: return "IN"
+            case .is: return "IS"
+            case .isNot: return "IS NOT"
+            case .like: return "LIKE"
+            case .ilike: return "ILIKE"
+            case .jsonExistsIn: return "?|"
+            case .raw: return ""
+            case .bitwiseAnd: return "&"
+            case .bitwiseOr: return "|"
+            case .bitwiseXor: return "#"
+            case .bitwiseNot: return "~"
+        }
+    }
+
 }
+
+public typealias WHERE_LINE_OPERATOR = WhereLineOperator  // for backward compatibility
+
 
 public enum WHERE_OPERATOR: String {
     case AND = "AND"
@@ -45,11 +93,14 @@ public protocol MDBWhereString {
 public struct MDBWhereLine : MDBWhereString {
     public var where_op:WHERE_OPERATOR = .AND
     public var field:String
-    public var op: WHERE_LINE_OPERATOR
+    //public var op: WHERE_LINE_OPERATOR
+    public var op: WhereLineOperator
     public var mdbValue: MDBValue
     public var value: String = ""
 
-    init( where_op: WHERE_OPERATOR, field: String, op: WHERE_LINE_OPERATOR, mdbValue: MDBValue ) {
+
+    //init( where_op: WHERE_OPERATOR, field: String, op: WHERE_LINE_OPERATOR, mdbValue: MDBValue ) {
+    init( where_op: WHERE_OPERATOR, field: String, op: WhereLineOperator, mdbValue: MDBValue ) {
         self.where_op = where_op
         self.field = field
         self.op = op
@@ -59,10 +110,10 @@ public struct MDBWhereLine : MDBWhereString {
     
     public func raw ( firstLine: Bool) -> String {
         if (where_op == .UNDEF) {  // v2
-            return field + " " + ( op.rawValue ) + " " + value
+            return field + " " + ( op.value ) + " " + value
         }
         else {  // v1
-            return (firstLine ? "" : "\(where_op) ") + field + " " + ( op.rawValue ) + " " + value
+            return (firstLine ? "" : "\(where_op) ") + field + " " + ( op.value ) + " " + value
         }
     }
 }
@@ -195,7 +246,8 @@ public class MDBQueryWhere {
         return self ;
     }
 
-    public func add_where_line( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws {
+    //public func add_where_line( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws {
+    public func add_where_line( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WhereLineOperator, _ value: Any? ) throws {
         if (where_op != .UNDEF) {  // v.1 behaviour
             whereCond( ).push( MDBWhereLine( where_op: where_op
                                         , field: field is String ? MDBValue(fromTable: field as! String).value : (field as! MDBValue).value

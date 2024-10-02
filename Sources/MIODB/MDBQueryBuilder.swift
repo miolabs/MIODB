@@ -12,19 +12,19 @@ public extension MDBQuery {
         throw MDBError.general( "alias is deprecated for clarity. Use tableAlias" )
     }
     
+    @discardableResult
     func tableAlias ( _ alias_name: String ) -> MDBQuery { 
         _tableAlias = MDBValue( fromTable: alias_name).value
         return self 
     }
 
+    @discardableResult
     func returning ( _ args: String... ) -> MDBQuery {
         for field in args {
             _returning.append( MDBValue( fromTable: field ).value )
         }
         return self
     }
-
-    
 
     @discardableResult
     func select ( _ args: Any... ) -> MDBQuery {
@@ -220,7 +220,8 @@ public extension MDBQuery {
     }
 
      @discardableResult
-    func addCondition(_ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> MDBQuery {
+    func addCondition(_ field: Any, _ op: WhereLineOperator, _ value: Any? ) throws -> MDBQuery {
+    //func addCondition(_ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> MDBQuery {
         if ( _where != nil ) {
             try _where!.add_where_line( .UNDEF, field, op, value )
         }

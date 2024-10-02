@@ -49,7 +49,7 @@ public struct MDBWhereLineV1 : MDBWhereStringV1 {
     public var value: String
     
     public func raw ( firstLine: Bool ) -> String {
-        return (firstLine ? "" : "\(where_op) ") + field + " " + ( op.rawValue ) + " " + value
+        return (firstLine ? "" : "\(where_op) ") + field + " " + ( op.value ) + " " + value
     }
 }
 

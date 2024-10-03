@@ -1,80 +1,8 @@
 //
-//  File.swift
-//  
-//
 //  Created by David Trallero on 11/07/2020.
 //
 
 import Foundation
-
-
-public enum WhereLineOperator: String {
-    case EQ = "="
-    case NEQ = "!="
-    case LT = "<"
-    case LE = "<="
-    case GT = ">"
-    case GE = ">="
-    case NOT_IN = "NOT IN"
-    case IN = "IN"
-    case IS = "IS"
-    case IS_NOT = "IS NOT"
-    case LIKE = "LIKE"
-    case ILIKE = "ILIKE"
-    case JSON_EXISTS_IN = "?|"
-    case RAW = ""
-    case BITWISE_AND = "&"
-    case BITWISE_OR = "|"
-    case BITWISE_XOR = "#"
-    case BITWISE_NOT = "~"
-    case equal
-    case notEqual
-    case lessThan
-    case lessThanOrEqual
-    case greaterThan
-    case greaterThanOrEqual
-    case notIn
-    case `in`
-    case `is`
-    case isNot
-    case like
-    case ilike
-    case jsonExistsIn
-    case raw
-    case bitwiseAnd
-    case bitwiseOr
-    case bitwiseXor
-    case bitwiseNot
-
-    var value: String {
-        switch self {
-            case .EQ, .NEQ, .LT, .LE, .GT, .GE, .NOT_IN, .IN, .IS, .IS_NOT, .LIKE, .ILIKE, 
-                .JSON_EXISTS_IN, .BITWISE_AND, .BITWISE_OR, .BITWISE_XOR, .BITWISE_NOT, .RAW:
-                return self.rawValue
-            case .equal: return "="
-            case .notEqual: return "!="
-            case .lessThan: return "<"
-            case .lessThanOrEqual: return "<="
-            case .greaterThan: return ">"
-            case .greaterThanOrEqual: return ">="
-            case .notIn: return "NOT IN"
-            case .in: return "IN"
-            case .is: return "IS"
-            case .isNot: return "IS NOT"
-            case .like: return "LIKE"
-            case .ilike: return "ILIKE"
-            case .jsonExistsIn: return "?|"
-            case .raw: return ""
-            case .bitwiseAnd: return "&"
-            case .bitwiseOr: return "|"
-            case .bitwiseXor: return "#"
-            case .bitwiseNot: return "~"
-        }
-    }
-
-}
-
-public typealias WHERE_LINE_OPERATOR = WhereLineOperator  // for backward compatibility
 
 
 public enum WHERE_OPERATOR: String {
@@ -89,17 +17,13 @@ public protocol MDBWhereString {
     func raw ( firstLine: Bool) -> String
 }
 
-
 public struct MDBWhereLine : MDBWhereString {
     public var where_op:WHERE_OPERATOR = .AND
     public var field:String
-    //public var op: WHERE_LINE_OPERATOR
     public var op: WhereLineOperator
     public var mdbValue: MDBValue
     public var value: String = ""
 
-
-    //init( where_op: WHERE_OPERATOR, field: String, op: WHERE_LINE_OPERATOR, mdbValue: MDBValue ) {
     init( where_op: WHERE_OPERATOR, field: String, op: WhereLineOperator, mdbValue: MDBValue ) {
         self.where_op = where_op
         self.field = field
@@ -117,21 +41,6 @@ public struct MDBWhereLine : MDBWhereString {
         }
     }
 }
-
-/*
-public class MDBWhere {
-    public var lines: [ MDBWhereString ] = []
-    
-    public func raw ( first_line_hides_operator: Bool = true ) -> String {
-        return lines.enumerated().map{ (index,line) in line.raw( firstLine: first_line_hides_operator && index == 0 ) }.joined( separator: " " )
-    }
-    
-    func push ( _ cond: MDBWhereString ) {
-        lines.append( cond )
-    }
-}
-*/
-
 
 public class MDBWhereGroup : MDBWhereString {
     //public var where_fields: MDBWhere = MDBWhere( )
@@ -180,9 +89,6 @@ public class MDBWhereGroup : MDBWhereString {
         }
     }
     
-    // public func raw ( first_line_hides_operator: Bool = true ) -> String {
-    //     return where_fields.raw( first_line_hides_operator: first_line_hides_operator )
-    // }
     public func raw ( first_line_hides_operator: Bool = true ) -> String {
         if (_group_where_op != .UNDEF) {  // v2
             return ""
@@ -198,15 +104,14 @@ public class MDBWhereGroup : MDBWhereString {
         lines.append( cond )
     }
 
-    func contains_MDBWhereLine ( ) -> Bool {
-        for item in lines {
-            if item is MDBWhereLine {
-                return true
-            }
-        }
-        return false
-    }
-
+    // func contains_MDBWhereLine ( ) -> Bool {
+    //     for item in lines {
+    //         if item is MDBWhereLine {
+    //             return true
+    //         }
+    //     }
+    //     return false
+    // }
 }
 
 
@@ -220,11 +125,6 @@ public class MDBQueryWhere {
     }
     
     private func whereCond ( ) -> MDBWhereGroup { //MDBWhere {
-        // if whereStack.isEmpty {
-        //     _whereCond = MDBWhereGroup( )
-        //     whereStack.append( _whereCond! )
-        // }
-        
         return whereStack.last!
     }
     
@@ -246,7 +146,6 @@ public class MDBQueryWhere {
         return self ;
     }
 
-    //public func add_where_line( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws {
     public func add_where_line( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WhereLineOperator, _ value: Any? ) throws {
         if (where_op != .UNDEF) {  // v.1 behaviour
             whereCond( ).push( MDBWhereLine( where_op: where_op

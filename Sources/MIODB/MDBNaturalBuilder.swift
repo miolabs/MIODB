@@ -1,3 +1,9 @@
+
+//
+// Module to build MDBQuery objects using a declarative syntax rather than method chaining (both are valid)
+// See TestNaturalBuilder.swift for examples
+//
+
 import Foundation
 
 // MARK: - Query
@@ -21,6 +27,55 @@ public class Select : QueryPart {
 	}
 }
 
+public class Insert : QueryPart {
+	var values: [String: Any?] = [:]
+	var multiValues: [[String: Any?]] = []
+	init (_ args: [String: Any?]) {
+		self.values = args
+	}
+	init (_ args: [[String: Any?]]) {
+		self.multiValues = args
+	}
+
+	public func add(to query:  MDBQuery) throws {
+		if multiValues.isEmpty {
+			try query.insert(values)
+		} else {
+			try query.insert(multiValues)
+		}
+	}
+}
+
+public class Update : QueryPart {
+	var values: [String: Any?] = [:]
+	init (_ args: [String: Any?]) {
+		self.values = args
+	}
+
+	public func add(to query:  MDBQuery) throws {
+		try query.update(values)
+	}
+}
+
+public class Join : QueryPart {
+	var table1: String
+	var from1: String?
+	var to1: String
+	var joinType1: JOIN_TYPE
+	var as_what1: String?
+	init (table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil) {
+		self.table1 = table
+		self.from1 = from
+		self.to1 = to
+		self.joinType1 = joinType
+		self.as_what1 = as_what
+	}
+
+	public func add(to query:  MDBQuery) throws {
+		try query.join(table: table1, from: from1, to: to1, joinType: joinType1, as: as_what1)
+	}
+}
+
 extension OrderBy : QueryPart {
 	init ( _ field: String, _ dir: ORDER_BY_DIRECTION = .ASC) {
 		self.field = field
@@ -29,6 +84,17 @@ extension OrderBy : QueryPart {
 
 	public func add(to query:  MDBQuery) throws {
 		query.orderBy(self.field, self.dir)
+	}
+}
+
+public class GroupBy : QueryPart {
+	var group: String
+	init (_ group: String) {
+		self.group = group
+	}
+
+	public func add(to query:  MDBQuery) throws {
+		query.groupBy(group)
 	}
 }
 
@@ -42,9 +108,62 @@ public class TableAlias : QueryPart {
 		query.tableAlias(self.alias)
 	}
 }
-		
-// MARK: - Where
 
+public class Limit : QueryPart {
+	var value: Int32
+	init (_ value: Int32) {
+		self.value = value
+	}
+
+	public func add(to query:  MDBQuery) throws {
+		query.limit(value)
+	}
+}
+
+public class Offset : QueryPart {
+	var value: Int32
+	init (_ value: Int32) {
+		self.value = value
+	}
+
+	public func add(to query:  MDBQuery) throws {
+		query.offset(value)
+	}
+}
+
+public class Returning : QueryPart {
+	var fields: [String] = []
+	init (_ args: String...) {
+		for field in args {
+            fields.append( MDBValue( fromTable: field ).value)
+        }
+	}
+
+	public func add(to query:  MDBQuery) throws {
+		query._returning = self.fields
+	}
+}
+
+public class Test : QueryPart {
+	init () {}
+	public func add(to query:  MDBQuery) throws {
+		query.test()
+	}
+}
+
+public class DistinctOn : QueryPart {
+	var cols: [String] = []
+	init (_ cols: [String]) {
+		self.cols = cols
+	}
+
+	public func add(to query:  MDBQuery) throws {
+		query.distinctOn(self.cols)
+	}
+}
+
+	
+// MARK: - Where
 public protocol WherePart {
 	func add(to query: MDBQuery) throws
 }

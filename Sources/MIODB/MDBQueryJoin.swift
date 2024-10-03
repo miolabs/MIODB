@@ -14,7 +14,7 @@ public enum JOIN_TYPE: String {
     case FULL  = "FULL"
 }
 
-public class Join {
+public class JoinClause {
     public var _where: MDBQueryWhere = MDBQueryWhere( )
     public var joinType: JOIN_TYPE
     public var table: String
@@ -35,7 +35,7 @@ public class Join {
     }
     
     @discardableResult
-    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> Join {
+    public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> JoinClause {
         try _where.add_where_line( where_op, field, op, value )
 
         return self
@@ -49,7 +49,7 @@ public class Join {
 }
 
 
-public class JoinJSON: Join {
+public class JoinJSON: JoinClause {
     init ( joinType: JOIN_TYPE, table: String, json: String, toTable: String, asWhat: String? = nil ) {
         super.init( joinType: joinType, table: table, fromTable: json, toTable: toTable, asWhat: asWhat )
     }

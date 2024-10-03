@@ -65,7 +65,7 @@ open class MDBQuery {
     public var _limit: Int32 = 0
     public var _offset: Int32 = 0
     public var order: [ OrderBy ] = []
-    public var joins: [ Join ] = []
+    public var joins: [ JoinClause ] = []
     public var _group_by: [ String ] = []
     public var on_conflict: String = ""
     public var distinct_on: [String] = []

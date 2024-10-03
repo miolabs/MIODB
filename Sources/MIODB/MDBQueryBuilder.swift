@@ -54,12 +54,14 @@ public extension MDBQuery {
         return self
     }
 
+    @discardableResult
     func update ( _ val: [String:Any?] ) throws -> MDBQuery {
         queryType = .UPDATE
         self.values = try toValues( val )
         return self
     }
     
+    @discardableResult
     func insert ( _ val: [String:Any?] ) throws -> MDBQuery {
         queryType = .INSERT
         self.values = try toValues( val )
@@ -80,7 +82,7 @@ public extension MDBQuery {
         return self
     }
 
-    
+    @discardableResult
     func insert ( _ val: [[String:Any?]] ) throws -> MDBQuery {
         queryType = .MULTI_INSERT
         self.multiValues = try val.map{ try toValues( $0 ) }
@@ -139,7 +141,13 @@ public extension MDBQuery {
     //
     
     @discardableResult
-    func groupBy ( _ field: String, _ dir: ORDER_BY_DIRECTION = .ASC ) -> MDBQuery {
+    func groupBy ( _ field: String, _ dir: ORDER_BY_DIRECTION = .ASC ) -> MDBQuery {  // dir ????
+        _group_by.append( field )
+        return self
+    }
+
+    @discardableResult
+    func groupBy ( _ field: String) -> MDBQuery { 
         _group_by.append( field )
         return self
     }
@@ -150,18 +158,19 @@ public extension MDBQuery {
         return self
     }
   
+    @discardableResult
     func limit ( _ value: Int32 ) -> MDBQuery
     {
         _limit = value ;
         return self
     }
 
+    @discardableResult
     func offset ( _ value: Int32 ) -> MDBQuery { _offset = value ; return self }
 
 
-
     @discardableResult
-    func join ( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil, _ cb: @escaping ( Join 		) throws -> Void = { _ in } ) throws -> MDBQuery {
+    func join ( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil, _ cb: @escaping ( JoinClause 		) throws -> Void = { _ in } ) throws -> MDBQuery {
         // let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
         // let to_table   = MDBValue( fromTable: to ).value
         let from_table = from != nil ?  MDBValue( fromTable: from! ).value :  // we use what we get if something comes in the 'from'
@@ -169,7 +178,7 @@ public extension MDBQuery {
         let to_table   = to.contains(".") ? MDBValue( fromTable: to ).value : // we use what we get if it is a table.field format
                                             MDBValue( fromTable: self.table ).value + "." + MDBValue( fromTable: to ).value
 
-        let new_join   = Join( joinType: joinType, table: table, fromTable: from_table, toTable: to_table, asWhat: as_what )
+        let new_join   = JoinClause( joinType: joinType, table: table, fromTable: from_table, toTable: to_table, asWhat: as_what )
         let join_already_done = joins.filter{ j in j.raw( ) == new_join.raw( ) }.count > 0
         
         if !join_already_done {
@@ -197,8 +206,8 @@ public extension MDBQuery {
         return self
     }
     
-
-      func test() -> MDBQuery {
+    @discardableResult
+    func test() -> MDBQuery {
         unitTest = true
         return self
     }

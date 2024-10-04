@@ -109,19 +109,20 @@ final class TestNaturalBuilder: XCTestCase {
     }
 
     func testTwoJoinAndOrder() throws {
-        let query = try MDBQueryEncoderSQL(MDBQuery( "product" ).select( "*" )
+        let nQuery = try MDBQuery("product") {
+            Select()
+            Join( table: "ProductModifier", to: "productModifier" )
+            Join( table: "ProductCategoryModifier", from: "productModifier", to: "productModifierCategory" )
+            OrderBy("syncID", .ASC)
+            OrderBy("name", .DESC)
+        }
+        let fQuery = try MDBQuery( "product" ).select( "*" )
                                      .join( table: "ProductModifier", to: "productModifier" )
                                      .join( table: "ProductCategoryModifier", from: "productModifier", to: "productModifierCategory" )
                                      .orderBy("syncID", .ASC)
                                      .orderBy("name", .DESC)
-                                     ).rawQuery( )
 
-         let expected = "SELECT * FROM \"product\" " +
-                      "INNER JOIN \"ProductModifier\" ON \"ProductModifier\".\"id\" = \"product\".\"productModifier\" " +
-                      "INNER JOIN \"ProductCategoryModifier\" ON \"productModifier\" = \"product\".\"productModifierCategory\" " +
-                      "ORDER BY \"syncID\" ASC,\"name\" DESC"
-
-       XCTAssertTrue(query == expected, query)
+         XCTAssertEqual( MDBQueryEncoderSQL(nQuery).rawQuery(), MDBQueryEncoderSQL(fQuery).rawQuery() )
     }
 
 // MARK: - insert  
@@ -174,8 +175,8 @@ final class TestNaturalBuilder: XCTestCase {
             Update( [ "modifier": 10, "str": "Hello" ] )
             Where {
                 Or {
-                    Condition( "name", .LT, "hello world" )
-                    Condition( "price", .GE, 15 )
+                    ( "name", .LT, "hello world" )
+                    ( "price", .GE, 15 )
                 }
             }
             Test()
@@ -196,7 +197,7 @@ final class TestNaturalBuilder: XCTestCase {
         let nQuery = try MDBQuery("table") {
             Select( "a", "b", "c" )
             Where {
-                Condition( "a", .GT, 1 )
+                ( "a", .GT, 1 )
             }
         }
         let fQuery = try MDBQuery("table").select("a", "b", "c").where().addCondition( "a", .GT, 1 )
@@ -208,11 +209,11 @@ final class TestNaturalBuilder: XCTestCase {
             Select( "a", "b", "c" )
             Where {
                 And {
-                    Condition( "a", .GT, 1 )
-                    Condition( "b", .equal, 2 )
+                    ( "a", .GT, 1 )
+                    ( "b", .equal, 2 )
                     Or {
-                        Condition( "c", .LT, 3 )
-                        Condition( "d", .EQ, 4 )
+                        ( "c", .LT, 3 )
+                        ( "d", .EQ, 4 )
                     }
                 }
             }
@@ -229,6 +230,32 @@ final class TestNaturalBuilder: XCTestCase {
                                 .endGroup()
                             .endGroup()
                             .orderBy("a", .DESC).orderBy("b", .ASC)
+        XCTAssertEqual( MDBQueryEncoderSQL(nQuery).rawQuery(), MDBQueryEncoderSQL(fQuery).rawQuery() )
+    }
+
+    func testWhere_03 ( ) throws {
+        let key1 = "b"
+        let nQuery = try MDBQuery("table") {
+            Select( "a", "b", "c" )
+            Where {
+                And {
+                    ("a", .equal, 1)
+                    Or {
+                        ( "c", .lessThan, 3 )
+                        ( key1, .equal, 4 )
+                    }
+                }
+            }
+        }
+        let fQuery = try MDBQuery("table").select("a", "b", "c")
+                    .where()
+                        .beginAndGroup()
+                            .addCondition( "a", .equal, 1 )
+                            .beginOrGroup()
+                                    .addCondition( "c", .LT, 3 )
+                                    .addCondition( key1, .EQ, 4 )
+                                .endGroup()
+                        .endGroup()
         XCTAssertEqual( MDBQueryEncoderSQL(nQuery).rawQuery(), MDBQueryEncoderSQL(fQuery).rawQuery() )
     }
 }

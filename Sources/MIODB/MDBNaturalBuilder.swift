@@ -167,7 +167,6 @@ public class DistinctOn : QueryPart {
 public protocol WherePart {
 	func add(to query: MDBQuery) throws
 }
-
 public class Condition : WherePart {
 	let field: Any
 	let op: WhereLineOperator
@@ -182,6 +181,8 @@ public class Condition : WherePart {
 		try query.addCondition(field, op, value)
 	}
 }
+
+public typealias ConditionTuple = (Any, WhereLineOperator, Any?)
 
 public class Or : WherePart {
 	var children: [WherePart] = []
@@ -226,6 +227,11 @@ public class Where : QueryPart {
 		_where = content()
     }
 
+	init(content: @escaping () -> ConditionTuple) {
+		let value = content()
+		_where = Condition(value.0, value.1, value.2)
+    }
+
 	public func add(to query:  MDBQuery) throws{
 		try query.where()
 		try _where.add(to: query)		
@@ -239,6 +245,50 @@ public struct NaturalWhere {
 
 	public static func buildBlock(_ commands: WherePart...) -> [WherePart] {
 		commands
+	}
+
+/* Experiments for a syntax parentesis free in the conditions
+	public static func buildBlock(_ commands: Any?...) -> [WherePart] {
+		var ret: [WherePart] = []
+		var currentField: Any? = nil
+		var currentOp: WhereLineOperator? = nil
+		var currentValue: Any? = nil
+		for command in commands {
+			if let command = command as? WherePart {
+				ret.append(command)
+			}
+			else if let command = command as? String {
+				if currentField == nil {
+					currentField = command
+				} else {
+					currentValue = command
+				}
+			}
+			else if let command = command as? WhereLineOperator {
+				currentOp = command
+			}
+			else{
+				currentValue = command == nil ? NSNull() : command 
+			}
+			
+			if currentField != nil && currentOp != nil && currentValue != nil {
+				ret.append(Condition(currentField!, currentOp!, currentValue is NSNull ? nil : currentValue))
+				currentField = nil
+				currentOp = nil
+				currentValue = nil
+			}
+		}
+
+		return ret
+	}
+	*/
+
+	public static func buildExpression(_ value: ConditionTuple) -> Condition {
+		Condition(value.0, value.1, value.2)	
+	}
+
+	public static func buildExpression(_ value: WherePart) -> WherePart {
+		value	
 	}
 }
 

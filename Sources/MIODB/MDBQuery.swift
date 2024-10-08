@@ -164,7 +164,7 @@ public class MDBQuery: MDBQueryWhere {
             let cnt = keys.intersection( keys ).count
             
             if cnt != keys.count || row_keys.count != cnt {
-                throw MDBError.general( "The inserted dictionary does not have the same keys: \(row_keys) vs first row keys: \(keys)" )
+                throw MDBError.general( "The inserted dictionary does not have the same keys: \(row_keys) vs first row keys: \(keys). Missing \(keys.symmetricDifference( row_keys ))." )
             }
         }
     }

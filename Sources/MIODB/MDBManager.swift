@@ -23,7 +23,7 @@ public class MDBManager
         
     // Initialization
     private init() {
-        startIdleTimer()
+//        startIdleTimer()
     }
 
     static let connectionQueue = DispatchQueue(label: "com.miolabs.connection.queue")
@@ -42,45 +42,52 @@ public class MDBManager
     // db_id = db_59, db_63,...
     // to_db = nil means uses schema. Otherwise connects to the DB in the "db_id" cluster
     public func connection ( _ db_id: String, _ to_db: String? = nil ) throws -> MIODB {
-        var conn:MIODB? = nil
-        let pool_id = to_db ?? db_id
-
-        try MDBManager.connectionQueue.sync( flags: .barrier ) {
-            
-            if self.pool[ pool_id ]?.count ?? 0 > 0 {
-                conn = pool[ pool_id ]!.first!
-                
-                self.pool[ pool_id ]!.remove(at:0) // .dropFirst( )
-            }
-            else {
-                guard let factory = self.connections[ db_id ] else {
-                    throw MDBError.invalidPoolID( db_id )
-                }
-                conn = try factory.create( to_db )
-                conn!.poolID = pool_id
-            }
+//        var conn:MIODB? = nil
+//        let pool_id = to_db ?? db_id
+//
+//        try MDBManager.connectionQueue.sync( flags: .barrier ) {
+//            
+//            if self.pool[ pool_id ]?.count ?? 0 > 0 {
+//                conn = pool[ pool_id ]!.first!
+//                
+//                self.pool[ pool_id ]!.remove(at:0) // .dropFirst( )
+//            }
+//            else {
+//                guard let factory = self.connections[ db_id ] else {
+//                    throw MDBError.invalidPoolID( db_id )
+//                }
+//                conn = try factory.create( to_db )
+//                conn!.poolID = pool_id
+//            }
+//        }
+//        
+//        return conn!
+        
+        guard let factory = self.connections[ db_id ] else {
+            throw MDBError.invalidPoolID( db_id )
         }
         
-        return conn!
+        return try factory.create( to_db )
     }
     
     
     public func release ( _ db: MIODB ) {
-        MDBManager.connectionQueue.sync( flags: .barrier ) {
-            
-            if let poolID = db.poolID {
-                
-                if self.pool[ poolID ] == nil { self.pool[ poolID ] = [] }
-                
-                self.pool[ poolID ]!.append( db )
-            }
-        }
+//        MDBManager.connectionQueue.sync( flags: .barrier ) {
+//            
+//            if let poolID = db.poolID {
+//                
+//                if self.pool[ poolID ] == nil { self.pool[ poolID ] = [] }
+//                
+//                self.pool[ poolID ]!.append( db )
+//            }
+//        }
+        db.disconnect()
     }
     
     let timerQueue = DispatchQueue(label: "idle-pool-timer")
     
     func startIdleTimer() {
-        
+        /*
         timerQueue.async {
             
             Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
@@ -114,5 +121,6 @@ public class MDBManager
             }
             RunLoop.current.run()
         }
+         */
     }
 }

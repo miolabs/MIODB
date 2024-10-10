@@ -247,7 +247,7 @@ public struct NaturalWhere {
 		commands
 	}
 
-/* Experiments for a syntax parentesis free in the conditions
+/* Experiments for a parentheses free syntax in the conditions
 	public static func buildBlock(_ commands: Any?...) -> [WherePart] {
 		var ret: [WherePart] = []
 		var currentField: Any? = nil

@@ -15,9 +15,65 @@ class TestDBQueries: XCTestCase
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
 
-    override func tearDownWithError() throws {
-    }     // Put teardown code here. This method is called after the invocation of each test method in the class.
+    weak var weakEncoder1: MDBQueryEncoderSQL? = nil
+    weak var weakQuery1: MDBQuery? = nil
+
+    override func tearDown()  {
+      super.tearDown()
+      print("*** tearDown")
+      XCTAssertNil(weakEncoder1, "potential memory leak on \(String(describing: weakEncoder1))")
+      XCTAssertNil(weakQuery1, "potential memory leak on \(String(describing: weakQuery1))")
+    }
    
+    func trackForMemoryLeak(_ instance: AnyObject,
+                            file: StaticString = #filePath,
+                            line: UInt = #line) {
+      addTeardownBlock { [weak instance] in
+        XCTAssertNil(
+                      instance,
+                      "potential memory leak on \(String(describing: instance))",
+                      file: file,
+                      line: line
+                    )
+        } 
+      }
+
+     // private func makeSUT(
+    //                  file: StaticString = #filePath,
+    //                  line: UInt = #line) -> (SutType1, SutType2) {
+    // let s1 = SutType1()
+    // let s2 = SutType2()
+    // trackForMemoryLeak(instance: s1, file: file, line: line)
+    // trackForMemoryLeak(instance: s2, file: file, line: line)
+    // return (s1, s2)
+    // }
+
+    func testSelect ( ) throws {
+        let mdbquery = MDBQuery( "product" ).select()
+        let mdbencoder = MDBQueryEncoderSQL(mdbquery)
+        weakEncoder1 = mdbencoder
+        weakQuery1 = mdbquery
+        let query = mdbencoder.rawQuery(); 
+        
+        XCTAssert( query == "SELECT * FROM \"product\"", query )
+
+        let query2 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "name" )).rawQuery( ) ;
+        
+        XCTAssert( query2 == "SELECT \"name\" FROM \"product\"", query2 )
+
+        let query3 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "name", "price" )).rawQuery( ) ;
+        
+        XCTAssert( query3 == "SELECT \"name\",\"price\" FROM \"product\"", query3 )
+
+        // DO NOT USE "as"
+        let query4 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "product.*", "modifier.price AS mod_price" )).rawQuery( ) ;
+        
+        XCTAssert( query4 == "SELECT \"product\".*,\"modifier\".\"price\" AS \"mod_price\" FROM \"product\"", query4 )
+
+        trackForMemoryLeak(mdbencoder)
+        trackForMemoryLeak(mdbquery)
+    }
+
     
     func testValue ( ) throws {
         XCTAssertTrue( try MDBValue.fromValue(1).value == "1", "1" )
@@ -39,27 +95,6 @@ class TestDBQueries: XCTestCase
           , query )
         // Actual behaviour:
         //              SELECT * FROM "product" INNER JOIN "productCategory" ON "productCategory"."id" = "category"
-    }
-
-   
-
-    func testSelect ( ) throws {
-        let query = MDBQueryEncoderSQL(MDBQuery( "product" ).select()).rawQuery(); 
-        
-        XCTAssert( query == "SELECT * FROM \"product\"", query )
-
-        let query2 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "name" )).rawQuery( ) ;
-        
-        XCTAssert( query2 == "SELECT \"name\" FROM \"product\"", query2 )
-
-        let query3 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "name", "price" )).rawQuery( ) ;
-        
-        XCTAssert( query3 == "SELECT \"name\",\"price\" FROM \"product\"", query3 )
-
-        // DO NOT USE "as"
-        let query4 = MDBQueryEncoderSQL(MDBQuery( "product" ).select( "product.*", "modifier.price AS mod_price" )).rawQuery( ) ;
-        
-        XCTAssert( query4 == "SELECT \"product\".*,\"modifier\".\"price\" AS \"mod_price\" FROM \"product\"", query4 )
     }
 
     func testAlias ( ) throws {

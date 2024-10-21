@@ -38,15 +38,17 @@ struct MDBValueTypeConversion
 public class MDBValue {
     public var value: String = "" ;
     public var rawValue: Any?;
+    public var isDateTimeWithTimeZone = false;
 
     static var convert: [ MDBValueTypeConversion ] = []
     public static func register_type_conversion ( _ target: AnyClass, _ fn: @escaping MDBValueTypeConversionCallBack ) {
         convert.append( MDBValueTypeConversion( target: target, convert: fn ) )
     }
     
-    public init( _ v: Any?, isPartialString: Bool = false ) throws {
+    public init( _ v: Any?, isPartialString: Bool = false, isDateTimeWithTimeZone: Bool = false ) throws {
        try MIOCoreAutoReleasePool {
             rawValue = v
+            self.isDateTimeWithTimeZone = isDateTimeWithTimeZone
             if v == nil || v is NSNull { value = "NULL"; }
             else if v is [Any]         {
                                          //let list = try (v as! [Any]).map{ try MDBValue.fromValue( $0 ).value }
@@ -73,7 +75,10 @@ public class MDBValue {
             else if v is Int64         { value = String(v as! Int64)  }
             else if v is Decimal       { value = NSDecimalNumber(decimal: (v as! Decimal)).stringValue }
             else if v is Bool          { value = (v as! Bool) ? "TRUE" : "FALSE" }
-            else if v is Date          { value = "'" + MIOCoreDateTDateTimeFormatter().string( from: (v as! Date) ) + "'" }
+            else if v is Date          { value = isDateTimeWithTimeZone ? 
+                                            "'" + (v as! Date).ISO8601Format()  + "'" :
+                                            "'" + MIOCoreDateTDateTimeFormatter().string( from: (v as! Date) ) + "'" 
+                                        }
             else if v is [String:Any]  {
                 guard let data = try? MIOCoreJsonValue( withJSONObject: v as! [String:Any] ) else {
                         throw MDBValueError.couldNotConvert( v! )
@@ -167,3 +172,14 @@ public func toValues ( _ dict: [String:Any?] ) throws -> [String:MDBValue] {
 
 
 public typealias MDBValues = [String:MDBValue]
+
+public class MDBTZ : MDBValue {
+    public init( _ str: String ) throws {
+        // xxx dejamos este constructor u obligamos a que nos pasen un Date?
+        // en el caso de mongo, ¿permitimos querys con fechas como string?
+        try super.init(str, isDateTimeWithTimeZone: true )
+    }
+    public init( _ date: Date ) throws {
+        try super.init(date, isDateTimeWithTimeZone: true )
+    }
+}

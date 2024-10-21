@@ -301,9 +301,9 @@ public struct NaturalQuery {
 }
 
 public extension MDBQuery {
-	convenience init (_ table:String, @NaturalQuery _ content: ( ) -> [QueryPart]) throws {
+	convenience init (_ table:String, @NaturalQuery _ content: ( ) throws -> [QueryPart]) throws {
 		self.init(table)
-		for part in content() {
+		for part in try content() {
 			try part.add(to: self)
 		}
     }

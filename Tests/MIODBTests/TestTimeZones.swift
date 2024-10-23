@@ -25,7 +25,8 @@ final class TestTimeZones: XCTestCase {
         }
         let fQuery = try MDBQuery( "product" ).insert( [ "modifier": try MDBTZ(date), "str": "Hello" ] ).test()
         XCTAssertEqual( MDBQueryEncoderSQL(nQuery).rawQuery(), MDBQueryEncoderSQL(fQuery).rawQuery() )
-        print(MDBQueryEncoderSQL(nQuery).rawQuery())
+        XCTAssertEqual( MDBQueryEncoderSQL(nQuery).rawQuery(), 
+                        "INSERT INTO \"product\" (\"modifier\",\"str\") VALUES ('2024-10-21T10:33:00Z','Hello')")
     }
 
 }

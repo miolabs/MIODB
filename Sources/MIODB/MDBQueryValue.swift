@@ -7,6 +7,7 @@
 
 import Foundation
 import MIOCore
+import MIOCoreLogger
 
 public enum MDBValueError: Error {
     case couldNotConvert( _ value: Any )
@@ -45,7 +46,7 @@ public class MDBValue {
     
     public init( _ v: Any?, isPartialString: Bool = false ) throws {
        try MIOCoreAutoReleasePool {
-           _log.debug( "MDBValue.init \(String(describing: v))" )
+            Log.debug( "MDBValue.init \(String(describing: v))" )
             if v == nil || v is NSNull { value = "NULL" }
             else if v is [Any]         {
                                          //let list = try (v as! [Any]).map{ try MDBValue.fromValue( $0 ).value }
@@ -75,19 +76,19 @@ public class MDBValue {
             else if v is Date          { value = "'" + MIOCoreDateTDateTimeFormatter().string( from: (v as! Date) ) + "'" }
             else if v is [String:Any]  {
                 guard let data = try? MIOCoreJsonValue( withJSONObject: v as! [String:Any] ) else {
-                    _log.debug( "Could not convert \(v!) to Data" )
+                    Log.debug( "Could not convert \(v!) to Data" )
                         throw MDBValueError.couldNotConvert( v! )
                     }
                 
                 guard let new_value = String.init( data: data, encoding: .utf8 ) else {
-                    _log.debug( "Could not convert \(v!) to String" )
+                    Log.debug( "Could not convert \(v!) to String" )
                     throw MDBValueError.couldNotConvert( v! )
                 }
                 
                 value = "'\(new_value)'"
             }
             else {
-                _log.debug( "no type found for \(v!). Trying custom conversion" )
+                Log.debug( "no type found for \(v!). Trying custom conversion" )
                 var converted = false
                 
                 for c in MDBValue.convert {
@@ -99,7 +100,7 @@ public class MDBValue {
                 }
                 
                 if !converted {
-                    _log.debug( "Could not convert \(v!)" )
+                    Log.debug( "Could not convert \(v!)" )
                     throw MDBValueError.couldNotConvert( v! )
                 }
             }

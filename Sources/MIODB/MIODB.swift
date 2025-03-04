@@ -9,7 +9,7 @@
 import Foundation
 import MIOCoreLogger
 
-let _log = MCLogger(label: "com.miolabs.db")
+//let _log = MCLogger(label: "com.miolabs.db")
 
 open class MIODB: MDBConnection {
     public var connectionString:String?

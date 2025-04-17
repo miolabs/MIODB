@@ -17,7 +17,7 @@ extension MDBValueError: LocalizedError {
 public var errorDescription: String? {
     switch self {
     case let .couldNotConvert(value):
-        return "[MDBValue] Could not initialize with \(value) becasue its type is not supported."
+        return "Could not initialize becasue its type is not supported. \(value)"
     }
     }
 }
@@ -76,12 +76,12 @@ public class MDBValue {
             else if v is Date          { value = "'" + MIOCoreDateTDateTimeFormatter().string( from: (v as! Date) ) + "'" }
             else if v is [String:Any]  {
                 guard let data = try? MIOCoreJsonValue( withJSONObject: v as! [String:Any] ) else {
-                    Log.debug( "Could not convert \(v!) to Data" )
-                        throw MDBValueError.couldNotConvert( v! )
-                    }
+                    Log.debug( "Could not convert to Data: \(v!)" )
+                    throw MDBValueError.couldNotConvert( v! )
+                }
                 
                 guard let new_value = String.init( data: data, encoding: .utf8 ) else {
-                    Log.debug( "Could not convert \(v!) to String" )
+                    Log.debug( "Could not convert to String: \(v!)" )
                     throw MDBValueError.couldNotConvert( v! )
                 }
                 
@@ -100,7 +100,7 @@ public class MDBValue {
                 }
                 
                 if !converted {
-                    Log.debug( "Could not convert \(v!)" )
+                    Log.debug( "Could not convert to any: \(v!)" )
                     throw MDBValueError.couldNotConvert( v! )
                 }
             }

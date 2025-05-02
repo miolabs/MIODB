@@ -27,6 +27,7 @@ public class MDBManager
     }
 
     static let connectionQueue = DispatchQueue(label: "com.miolabs.connection.queue")
+    var _connection_count:Int = 0
     
     var connections: [String:MDBConnection] = [:]
     var pool: [String:[MIODB]] = [:]
@@ -62,24 +63,30 @@ public class MDBManager
 //        }
 //        
 //        return conn!
-        
-        guard let factory = self.connections[ db_id ] else {
-            throw MDBError.invalidPoolID( db_id )
+                
+        let db = try MDBManager.connectionQueue.sync( flags: .barrier ) {
+            guard let factory = self.connections[ db_id ] else {
+                throw MDBError.invalidPoolID( db_id )
+            }
+            
+            _connection_count += 1
+            return try factory.create( to_db, id: _connection_count )
         }
         
-        return try factory.create( to_db )
+        return db
     }
     
     
     public func release ( _ db: MIODB ) {
 //        MDBManager.connectionQueue.sync( flags: .barrier ) {
-//            
-//            if let poolID = db.poolID {
-//                
-//                if self.pool[ poolID ] == nil { self.pool[ poolID ] = [] }
-//                
-//                self.pool[ poolID ]!.append( db )
-//            }
+            //
+            //            if let poolID = db.poolID {
+            //
+            //                if self.pool[ poolID ] == nil { self.pool[ poolID ] = [] }
+            //
+            //                self.pool[ poolID ]!.append( db )
+            //            }
+            //        }
 //        }
         db.disconnect()
     }

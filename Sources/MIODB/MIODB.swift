@@ -9,16 +9,17 @@
 import Foundation
 import MIOCoreLogger
 
-//let _log = MCLogger(label: "com.miolabs.db")
-
-open class MIODB: MDBConnection {
-    public var id:Int = -1
+open class MIODB: MDBConnection
+{
     public var connectionString:String?
     
 //    public var isInsideTransaction : Bool = false
 //    var transactionQueryStrings : [String] = []
         
-    open func connect( _ to_db: String? = nil, id: Int = -1 ) throws { self.id = id; try changeScheme( scheme ) }
+    open func connect( _ to_db: String? = nil ) throws {
+        try changeScheme( scheme )
+    }
+    
     open func disconnect() { }
     open func changeScheme( _ schema: String? ) throws { self.scheme = scheme }
 

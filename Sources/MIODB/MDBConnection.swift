@@ -8,8 +8,10 @@
 
 import Foundation
 
-open class MDBConnection 
+open class MDBConnection
 {
+    public var identifier:String
+    public var label:String
     public var poolID:String?
 
     public var host:String?
@@ -20,6 +22,7 @@ open class MDBConnection
     public var scheme:String?
     public var userInfo:[String:Any]?
         
+    var connectionNumber:Int = 0
     var isExecuting = false
     var idleTimeInSeconds:Int = 0
     
@@ -29,6 +32,8 @@ open class MDBConnection
          , password:String? = nil
          , database:String? = nil
          , scheme:String? = nil
+         , identifier:String = "-1"
+         , label:String = "mdb-connection"
          , userInfo:[String:Any]? = nil ) {
         self.host = host
         self.port = port
@@ -36,6 +41,8 @@ open class MDBConnection
         self.password = password
         self.database = database
         self.scheme = scheme
+        self.identifier = identifier
+        self.label = label
         self.userInfo = userInfo
     }
     
@@ -47,11 +54,13 @@ open class MDBConnection
                    , password: connection.password
                    , database: connection.database
                    , scheme: connection.scheme
+                   , identifier: connection.identifier
+                   , label: connection.label
                    , userInfo: connection.userInfo )
          self.poolID = connection.poolID
      }
     
-    open func create ( _ to_db: String? = nil, id: Int = -1 ) throws -> MIODB { throw MDBError.createNotImplemented( ) }
+    open func create ( _ to_db: String? = nil, identifier: String? = nil, label: String? = nil ) throws -> MIODB { throw MDBError.createNotImplemented( ) }
     
     open func startIdleTimer ( ) {
         isExecuting = false

@@ -25,19 +25,17 @@ public class MDBManager
     private init() {
 //        startIdleTimer()
     }
-
+        
     static let connectionQueue = DispatchQueue(label: "com.miolabs.connection.queue")
     var _connection_count:Int = 0
     
     var connections: [String:MDBConnection] = [:]
     var pool: [String:[MIODB]] = [:]
-
     
     public func addConnection( _ connection: MDBConnection, forIdentifier poolID:String ) {
         MDBManager.connectionQueue.sync( flags: .barrier ) {
             self.connections[ poolID ] = connection
         }
-        
     }
         
     // db_id = db_59, db_63,...
@@ -68,9 +66,8 @@ public class MDBManager
             guard let factory = self.connections[ db_id ] else {
                 throw MDBError.invalidPoolID( db_id )
             }
-            
-            _connection_count += 1
-            return try factory.create( to_db, id: _connection_count )
+            _connection_count = _connection_count + 1 < Int.max ? _connection_count + 1 : 0
+            return try factory.create( to_db, identifier: "\(_connection_count)" )
         }
         
         return db

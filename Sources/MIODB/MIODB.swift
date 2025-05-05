@@ -21,7 +21,7 @@ open class MIODB: MDBConnection
     }
     
     open func disconnect() { }
-    open func changeScheme( _ schema: String? ) throws { self.scheme = scheme }
+    open func changeScheme( _ scheme: String? ) throws { self.scheme = scheme }
 
     deinit { disconnect() }
     

@@ -9,7 +9,7 @@
 import Foundation
 
 open class MDBConnection
-{
+{    
     public var identifier:String
     public var label:String
     public var poolID:String?
@@ -60,7 +60,7 @@ open class MDBConnection
          self.poolID = connection.poolID
      }
     
-    open func create ( _ to_db: String? = nil, identifier: String? = nil, label: String? = nil ) throws -> MIODB { throw MDBError.createNotImplemented( ) }
+    open func create ( _ to_db: String? = nil, identifier: String? = nil, label: String? = nil, delegate: MDBDelegate? = nil ) throws -> MIODB { throw MDBError.createNotImplemented( ) }
     
     open func startIdleTimer ( ) {
         isExecuting = false

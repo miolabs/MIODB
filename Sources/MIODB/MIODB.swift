@@ -9,15 +9,16 @@
 import Foundation
 import MIOCoreLogger
 
-public protocol MIODBDelegate : AnyObject
+public protocol MDBDelegate : AnyObject
 {
     func didConnect( db: MIODB )
     func didDisconnect( db: MIODB )
 }
 
+
 open class MIODB: MDBConnection
 {
-    weak var delegate: MIODBDelegate?
+    public weak var delegate: MDBDelegate?
     
     public var connectionString:String?
     
@@ -26,11 +27,11 @@ open class MIODB: MDBConnection
         
     open func connect( _ to_db: String? = nil ) throws {
 //        try changeScheme( scheme )
-        delegate?.didConnect(db: self )
+        delegate?.didConnect( db: self )
     }
     
     open func disconnect() {
-        delegate?.didDisconnect(db: self )
+        delegate?.didDisconnect( db: self )
     }
     
     open func changeScheme( _ scheme: String? ) throws { self.scheme = scheme }

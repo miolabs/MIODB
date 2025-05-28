@@ -18,7 +18,7 @@ enum MDBType
     case MySQL
 }
 
-public class MDBManager: MIODBDelegate 
+public class MDBManager: MDBDelegate
 {
     public static let shared = MDBManager()
         
@@ -68,10 +68,9 @@ public class MDBManager: MIODBDelegate
                 throw MDBError.invalidPoolID( db_id )
             }
             _connection_count = _connection_count + 1 < Int.max ? _connection_count + 1 : 0
-            return try factory.create( to_db, identifier: "\(_connection_count)" )
+            return try factory.create( to_db, identifier: "\(_connection_count)", delegate: self )
         }
         
-        db.delegate = self
         return db
     }
     
@@ -93,12 +92,12 @@ public class MDBManager: MIODBDelegate
     var _active_connections: Int = 0
     public var activeConnections: Int { return _active_connections }
     
-    public func didConnect(db: MIODB) {
+    public func didConnect( db: MIODB ) {
         _active_connections += 1
         Log.debug( "Connected to database \(db.identifier) index: \(db.connectionNumber) schema: \(db.scheme ?? "<nil>")")
     }
     
-    public func didDisconnect(db: MIODB) {
+    public func didDisconnect( db: MIODB ) {
         _active_connections -= 1
         Log.debug( "Disconnected from database \(db.identifier) index: \(db.connectionNumber) schema: \(db.scheme ?? "<nil>")")
     }

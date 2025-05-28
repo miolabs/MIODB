@@ -8,6 +8,7 @@
 
 import Foundation
 import MIOCore
+import MIOCoreLogger
 
 enum MDBType
 {
@@ -17,7 +18,7 @@ enum MDBType
     case MySQL
 }
 
-public class MDBManager 
+public class MDBManager: MIODBDelegate 
 {
     public static let shared = MDBManager()
         
@@ -70,6 +71,7 @@ public class MDBManager
             return try factory.create( to_db, identifier: "\(_connection_count)" )
         }
         
+        db.delegate = self
         return db
     }
     
@@ -87,6 +89,21 @@ public class MDBManager
 //        }
         db.disconnect()
     }
+    
+    var _active_connections: Int = 0
+    public var activeConnections: Int { return _active_connections }
+    
+    public func didConnect(db: MIODB) {
+        _active_connections += 1
+        Log.debug( "Connected to database \(db.identifier) index: \(db.connectionNumber) schema: \(db.scheme ?? "<nil>")")
+    }
+    
+    public func didDisconnect(db: MIODB) {
+        _active_connections -= 1
+        Log.debug( "Disconnected from database \(db.identifier) index: \(db.connectionNumber) schema: \(db.scheme ?? "<nil>")")
+    }
+    
+
     
     let timerQueue = DispatchQueue(label: "idle-pool-timer")
     

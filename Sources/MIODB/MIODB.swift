@@ -9,18 +9,30 @@
 import Foundation
 import MIOCoreLogger
 
+public protocol MIODBDelegate : AnyObject
+{
+    func didConnect( db: MIODB )
+    func didDisconnect( db: MIODB )
+}
+
 open class MIODB: MDBConnection
 {
+    weak var delegate: MIODBDelegate?
+    
     public var connectionString:String?
     
 //    public var isInsideTransaction : Bool = false
 //    var transactionQueryStrings : [String] = []
         
     open func connect( _ to_db: String? = nil ) throws {
-        try changeScheme( scheme )
+//        try changeScheme( scheme )
+        delegate?.didConnect(db: self )
     }
     
-    open func disconnect() { }
+    open func disconnect() {
+        delegate?.didDisconnect(db: self )
+    }
+    
     open func changeScheme( _ scheme: String? ) throws { self.scheme = scheme }
 
     deinit { disconnect() }

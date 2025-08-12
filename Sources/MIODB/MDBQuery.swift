@@ -364,13 +364,14 @@ public class MDBQuery: MDBQueryWhere {
         let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
         let to_table   = MDBValue( fromTable: to ).value
         let new_join   = Join( joinType: joinType, table: table, fromTable: from_table, toTable: to_table, asWhat: as_what )
-        let join_already_done = joins.filter{ j in j.raw( ) == new_join.raw( ) }.count > 0
+                                
+        try cb( new_join )
+        
+        let join_already_done = joins.filter { j in j.raw( ) == new_join.raw( ) }.count > 0
         
         if !join_already_done {
-          joins.append( new_join )
+            joins.append( new_join )
         }
-        
-        try cb( new_join )
         
         return self
     }

@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  MDBError.swift
 //  
 //
 //  Created by David Trallero on 26/11/2020.

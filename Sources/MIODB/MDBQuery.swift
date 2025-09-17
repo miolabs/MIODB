@@ -429,6 +429,7 @@ public class MDBQuery: MDBQueryWhere {
             case .UPSERT:
                 let sorted_values = sortedValues()
                 let t = MDBValue( fromTable: table ).value
+//                let classnames = Set(multiValues.map { $0["classname"]!.value } )
 
                 return sorted_values.isEmpty ? ""
                      : delegate?.upsert( table: t, values: sorted_values, conflict: on_conflict, returning: _returning ) ??
@@ -441,14 +442,15 @@ public class MDBQuery: MDBQueryWhere {
                                      , returningRaw()
                                      ] )
             case .MULTI_UPSERT:
-                 let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
-                 return sorted_values.isEmpty ? ""
+                let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
+                let classnames = Set(multiValues.map { $0["classname"]!.value } )
+                return sorted_values.isEmpty ? ""
 //                      : delegate?.multi_upsert( table: table, keys: sorted_values, values: multiValuesKeyValue( sorted_values ), conflict: on_conflict, returning: _returning ) ??
                       : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
                                       , valuesFieldsRaw( sorted_values )
                                       , "VALUES"
                                       , multiValuesRaw( sorted_values )
-                                      , "ON CONFLICT (" + on_conflict + ") DO UPDATE SET"
+                                      , "ON CONFLICT (" + on_conflict + ") WHERE classname in (\(classnames.joined( separator: ","))) DO UPDATE SET"
                                       , multiExcludedRaw( sorted_values )
                                       , returningRaw()
                                       ] )

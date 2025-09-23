@@ -38,10 +38,11 @@ struct OrderBy {
     }
 }
 
-public protocol MDBQueryProtocol
+public protocol MDBQueryDelegate
 {
-    func upsert( table: String, values: [(key:String,value:MDBValue)], conflict: String, returning: [String] ) -> String?
+//    func upsert( table: String, values: [(key:String,value:MDBValue)], conflict: String, returning: [String] ) -> String?
     // func multi_upsert( table: String, keys: [(key:String,value:MDBValue)], values: [[(key:String,value:MDBValue)]], conflict: String, returning: [String] ) -> String?
+    func customRawQuery( query: MDBQuery ) -> String
 }
 
 
@@ -60,11 +61,11 @@ public class MDBQuery: MDBQueryWhere {
     var order: [ OrderBy ] = []
     var joins: [ Join ] = []
     var _group_by: [ String ] = []
-    var on_conflict: String = ""
+    public var on_conflict: String = ""
     var distinct_on: [String] = []
     public var _alias: String? = nil
     
-    public var delegate: MDBQueryProtocol? = nil
+    public var delegate: MDBQueryDelegate? = nil
     
     public init( _ table: String ) {
         self.table = table
@@ -84,7 +85,7 @@ public class MDBQuery: MDBQueryWhere {
         return self
     }
     
-    func returningRaw ( ) -> String
+    public func returningRaw ( ) -> String
     {
         return _returning.isEmpty ? "" : "RETURNING " + _returning.joined( separator: "," )
     }
@@ -410,6 +411,13 @@ public class MDBQuery: MDBQueryWhere {
     }
     
     public func rawQuery () -> String {
+        let result = delegate?.customRawQuery( query: self )
+        if result != nil { return result! }
+        
+        return defaultRawQuery()
+    }
+    
+    public func defaultRawQuery () -> String {
         switch queryType {
             case .UNKOWN:
                  return ""
@@ -429,18 +437,15 @@ public class MDBQuery: MDBQueryWhere {
             case .UPSERT:
                 let sorted_values = sortedValues()
                 let t = MDBValue( fromTable: table ).value
-//                let classnames = Set(multiValues.map { $0["classname"]!.value } )
-
                 return sorted_values.isEmpty ? ""
-                     : delegate?.upsert( table: t, values: sorted_values, conflict: on_conflict, returning: _returning ) ??
-                       composeQuery( [ "INSERT INTO " + t
-                                     , valuesFieldsRaw( sorted_values )
-                                     , "VALUES"
-                                     , valuesValuesRaw( sorted_values )
-                                     , "ON CONFLICT (" + on_conflict + ") DO UPDATE SET"
-                                     , valuesRaw()
-                                     , returningRaw()
-                                     ] )
+                                             : composeQuery( [ "INSERT INTO " + t
+                                                             , valuesFieldsRaw( sorted_values )
+                                                             , "VALUES"
+                                                             , valuesValuesRaw( sorted_values )
+                                                             , "ON CONFLICT (" + on_conflict + ") DO UPDATE SET"
+                                                             , valuesRaw()
+                                                             , returningRaw()
+                                                             ] )
             case .MULTI_UPSERT:
                 let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
                 let classnames = Set(multiValues.map { $0["classname"]!.value } )
@@ -504,7 +509,7 @@ public class MDBQuery: MDBQueryWhere {
         }
     }
 
-    func composeQuery ( _ parts: [String?] ) -> String {
+    public func composeQuery ( _ parts: [String?] ) -> String {
         return (parts.filter{ $0 != nil && $0 != "" } as! [String]).joined(separator: " " )
     }
     
@@ -531,7 +536,7 @@ public class MDBQuery: MDBQueryWhere {
     }
     
     // Unfortunatelly dictionaries do not respect the declaration order, so we need to sorted them for testing
-    func sortedValues ( _ v: MDBValues? = nil ) -> [(key:String,value:MDBValue)] {
+    public func sortedValues ( _ v: MDBValues? = nil ) -> [(key:String,value:MDBValue)] {
         #if testing
         return ( v == nil ? values : v! ).sorted { (v1,v2) in v1.key < v2.key }
         #else
@@ -539,11 +544,11 @@ public class MDBQuery: MDBQueryWhere {
         #endif
     }
     
-    func valuesFieldsRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+    public func valuesFieldsRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
         return  "(" + (sorted_values.map{ "\"\($0.key)\"" }).joined(separator: ",") + ")"
     }
 
-    func valuesValuesRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+    public func valuesValuesRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
         return "(" + (sorted_values.map{ $0.value.value }).joined(separator: ",") + ")"
     }
 
@@ -561,7 +566,7 @@ public class MDBQuery: MDBQueryWhere {
 //    }
 //
     
-    func multiValuesRaw ( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+    public func multiValuesRaw ( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
         // THIS IS UGLY: During the migration it happens that some entities do have relations and other do not.
         // When using a multi-insert, the ones that has relations makes "spaces to fill-in" for the other entities
         func def_value ( col: String ) -> String {
@@ -573,7 +578,7 @@ public class MDBQuery: MDBQueryWhere {
            }.joined(separator: ",")
     }
     
-    func multiExcludedRaw ( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
+    public func multiExcludedRaw ( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {
         let conflict_keys = Set( on_conflict.components(separatedBy: ",").map{ $0.trimmingCharacters(in: .whitespacesAndNewlines) } )
         
         return sorted_values.filter{ col in !conflict_keys.contains( col.key ) }

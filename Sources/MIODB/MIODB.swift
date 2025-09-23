@@ -19,6 +19,7 @@ public protocol MDBDelegate : AnyObject
 open class MIODB: MDBConnection
 {
     public weak var delegate: MDBDelegate?
+    public var queryDelegate: MDBQueryDelegate?
     
     public var connectionString:String?
     
@@ -39,12 +40,15 @@ open class MIODB: MDBConnection
     deinit { disconnect() }
     
     @discardableResult open func fetch ( _ table: String, _ id: String ) throws -> [String : Any]? {
-        let entity = try execute( MDBQuery( table ).select().andWhere( "id", .EQ, id ) )!
+        let query = try MDBQuery( table ).select().andWhere( "id", .EQ, id )
+        query.delegate = queryDelegate
+        let entity = try execute( query )!
 
         return entity.first
     }
     
     @discardableResult open func execute(_ query: MDBQuery ) throws -> [[String : Any]]? {
+        query.delegate = queryDelegate
         let result = try executeQueryString( query.rawQuery() )
         startIdleTimer()
         return result

@@ -38,7 +38,7 @@ struct OrderBy {
     }
 }
 
-public protocol MDBQueryDelegate
+public protocol MDBQueryDelegate : AnyObject
 {
 //    func upsert( table: String, values: [(key:String,value:MDBValue)], conflict: String, returning: [String] ) -> String?
     // func multi_upsert( table: String, keys: [(key:String,value:MDBValue)], values: [[(key:String,value:MDBValue)]], conflict: String, returning: [String] ) -> String?

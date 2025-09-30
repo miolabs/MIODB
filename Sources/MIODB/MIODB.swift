@@ -19,7 +19,7 @@ public protocol MDBDelegate : AnyObject
 open class MIODB: MDBConnection
 {
     public weak var delegate: MDBDelegate?
-    public var queryDelegate: MDBQueryDelegate?
+    public weak var queryDelegate: MDBQueryDelegate?
     
     public var connectionString:String?
     

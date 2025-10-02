@@ -94,11 +94,13 @@ public class MDBManager: MDBDelegate
     
     public func didConnect( db: MIODB ) {
         _active_connections += 1
+        if _active_connections == Int.max { _active_connections = 0 }
         Log.debug( "Connected to database \(db.identifier) index: \(db.connectionNumber) schema: \(db.scheme ?? "<nil>")")
     }
     
     public func didDisconnect( db: MIODB ) {
         _active_connections -= 1
+        if _active_connections == Int.min { _active_connections = 0 }
         Log.debug( "Disconnected from database \(db.identifier) index: \(db.connectionNumber) schema: \(db.scheme ?? "<nil>")")
     }
     

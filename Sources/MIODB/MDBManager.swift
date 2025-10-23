@@ -104,8 +104,6 @@ public class MDBManager: MDBDelegate
         Log.debug( "Disconnected from database \(db.identifier) index: \(db.connectionNumber) schema: \(db.scheme ?? "<nil>")")
     }
     
-
-    
     let timerQueue = DispatchQueue(label: "idle-pool-timer")
     
     func startIdleTimer() {

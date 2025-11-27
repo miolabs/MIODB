@@ -73,7 +73,7 @@ public class MDBValue {
             else if v is Int64         { value = String(v as! Int64)  }
             else if v is Decimal       { value = NSDecimalNumber(decimal: (v as! Decimal)).stringValue }
             else if v is Bool          { value = (v as! Bool) ? "TRUE" : "FALSE" }
-            else if v is Date          { value = "'" + MIOCoreDateTDateTimeFormatter().string( from: (v as! Date) ) + "'" }
+            else if v is Date          { value = "'" + MIOCoreISO8601Formatter().string( from: (v as! Date) ) + "'" }
             else if v is [String:Any]  {
                 guard let data = try? MIOCoreJsonValue( withJSONObject: v as! [String:Any] ) else {
 //                    Log.debug( "Could not convert to Data: \(v!)" )

@@ -30,11 +30,20 @@ public enum ORDER_BY_DIRECTION: String {
 
 
 struct OrderBy {
-    var field: String
-    var dir: ORDER_BY_DIRECTION = .ASC
+//    var field: String
+//    var dir: ORDER_BY_DIRECTION = .ASC
+    let rawValue: String
+    
+    init(field: String, dir: ORDER_BY_DIRECTION) {
+        self.rawValue = field + " \(dir)"
+    }
+    
+    init(raw: String) {
+        self.rawValue = raw
+    }
     
     func raw ( ) -> String {
-        return field + " \(dir)"
+        return rawValue
     }
 }
 
@@ -330,6 +339,12 @@ public class MDBQuery: MDBQueryWhere {
     @discardableResult
     public func orderBy ( _ field: String, _ dir: ORDER_BY_DIRECTION = .ASC ) -> MDBQuery {
         order.append( OrderBy( field: MDBValue( fromTable: field ).value, dir: dir ) )
+        return self
+    }
+
+    @discardableResult
+    public func orderBy ( raw:String ) -> MDBQuery {
+        order.append( OrderBy( raw: raw ) )
         return self
     }
     

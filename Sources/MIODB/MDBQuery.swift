@@ -52,6 +52,7 @@ public protocol MDBQueryDelegate : AnyObject
 //    func upsert( table: String, values: [(key:String,value:MDBValue)], conflict: String, returning: [String] ) -> String?
     // func multi_upsert( table: String, keys: [(key:String,value:MDBValue)], values: [[(key:String,value:MDBValue)]], conflict: String, returning: [String] ) -> String?
     func customRawQuery( query: MDBQuery ) -> String
+    func customValueConvertion(field: String, value: UnsafePointer<Int8>) -> (Bool, Any?)
 }
 
 

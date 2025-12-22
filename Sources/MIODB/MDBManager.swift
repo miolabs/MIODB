@@ -27,11 +27,11 @@ public class MDBManager: MDBDelegate
 //        startIdleTimer()
     }
         
-    static let connectionQueue = DispatchQueue(label: "com.miolabs.connection.queue", attributes: .concurrent)
+    public static let connectionQueue = DispatchQueue(label: "com.miolabs.connection.queue", attributes: .concurrent)
     var _connection_count:Int = 0
     
-    var connections: [String:MDBConnection] = [:]
-    var pool: [String:[MIODB]] = [:]
+    public var connections: [String:MDBConnection] = [:]
+    public var pool: [String:[MIODB]] = [:]
     
     public func addConnection( _ connection: MDBConnection, forIdentifier poolID:String ) {
         MDBManager.connectionQueue.sync( flags: .barrier ) {

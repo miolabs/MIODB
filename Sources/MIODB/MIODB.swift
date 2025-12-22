@@ -15,7 +15,6 @@ public protocol MDBDelegate : AnyObject
     func didDisconnect( db: MIODB )
 }
 
-
 open class MIODB: MDBConnection
 {
     public weak var delegate: MDBDelegate?

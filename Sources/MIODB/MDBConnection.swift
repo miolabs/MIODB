@@ -21,10 +21,21 @@ open class MDBConnection
     public var database:String?
     public var scheme:String?
     public var userInfo:[String:Any]?
-        
+    
+    private let idleTimerQueue = DispatchQueue(label: "com.mdbconnection.idletimer")
+    
     var connectionNumber:Int = 0
-    var isExecuting = false
-    var idleTimeInSeconds:Int = 0
+    private var _isExecuting = false
+    private var _idleTimeInSeconds:Int = 0
+    
+    var isExecuting: Bool {
+        get { idleTimerQueue.sync { _isExecuting } }
+        set { idleTimerQueue.sync { _isExecuting = newValue } }
+    }
+    var idleTimeInSeconds: Int {
+        get { idleTimerQueue.sync { _idleTimeInSeconds } }
+        set { idleTimerQueue.sync { _idleTimeInSeconds = newValue } }
+    }
     
     public init ( host:String? = nil
          , port:Int32? = nil
@@ -63,17 +74,23 @@ open class MDBConnection
     open func create ( _ to_db: String? = nil, identifier: String? = nil, label: String? = nil, delegate: MDBDelegate? = nil ) throws -> MIODB { throw MDBError.createNotImplemented( ) }
     
     open func startIdleTimer ( ) {
-        isExecuting = false
-        idleTimeInSeconds = 0
+        idleTimerQueue.sync {
+            _isExecuting = false
+            _idleTimeInSeconds = 0
+        }
     }
     
     open func stopIdleTimer ( ) {
-        isExecuting = true
-        idleTimeInSeconds = 0
+        idleTimerQueue.sync {
+            _isExecuting = true
+            _idleTimeInSeconds = 0
+        }
     }
     
     open func updateIdleTime(seconds:Int) {
-        if isExecuting { return }
-        idleTimeInSeconds += seconds
+        idleTimerQueue.sync {
+            if _isExecuting { return }
+            _idleTimeInSeconds += seconds
+        }
     }
 }

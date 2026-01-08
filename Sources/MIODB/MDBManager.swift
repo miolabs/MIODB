@@ -24,7 +24,7 @@ public class MDBManager: MDBDelegate
         
     // Initialization
     private init() {
-//        startIdleTimer()
+        startIdleTimer()
     }
         
     public static let connectionQueue = DispatchQueue(label: "com.miolabs.connection.queue", attributes: .concurrent)

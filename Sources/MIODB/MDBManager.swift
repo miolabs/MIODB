@@ -42,36 +42,22 @@ public class MDBManager: MDBDelegate
     // db_id = db_59, db_63,...
     // to_db = nil means uses schema. Otherwise connects to the DB in the "db_id" cluster
     public func connection ( _ db_id: String, _ to_db: String? = nil ) throws -> MIODB {
-//        var conn:MIODB? = nil
-//        let pool_id = to_db ?? db_id
-//
-//        try MDBManager.connectionQueue.sync( flags: .barrier ) {
-//            
-//            if self.pool[ pool_id ]?.count ?? 0 > 0 {
-//                conn = pool[ pool_id ]!.first!
-//                
-//                self.pool[ pool_id ]!.remove(at:0) // .dropFirst( )
-//            }
-//            else {
-//                guard let factory = self.connections[ db_id ] else {
-//                    throw MDBError.invalidPoolID( db_id )
-//                }
-//                conn = try factory.create( to_db )
-//                conn!.poolID = pool_id
-//            }
-//        }
-//        
-//        return conn!
-                
-        let db = try MDBManager.connectionQueue.sync( flags: .barrier ) {
-            guard let factory = self.connections[ db_id ] else {
+        // Phase 1: under barrier, look up the factory and reserve an identifier.
+        // This is fast (dictionary read + counter increment).
+        let (factory, identifier) = try MDBManager.connectionQueue.sync( flags: .barrier ) { () -> (MDBConnection, String) in
+            guard let f = self.connections[ db_id ] else {
                 throw MDBError.invalidPoolID( db_id )
             }
             _connection_count = _connection_count + 1 < Int.max ? _connection_count + 1 : 0
-            return try factory.create( to_db, identifier: "\(_connection_count)", delegate: self )
+            return (f, "\(_connection_count)")
         }
-        
-        return db
+
+        // Phase 2: OUTSIDE the barrier, do the actual TCP connect. This may
+        // take seconds (or hang on the connect_timeout when the network is
+        // bad). Holding the barrier during this would serialize ALL connection
+        // attempts behind one slow connect, saturating the thread pool when
+        // a single TCP connect takes time to error out.
+        return try factory.create( to_db, identifier: identifier, delegate: self )
     }
     
     
@@ -90,17 +76,23 @@ public class MDBManager: MDBDelegate
     }
     
     var _active_connections: Int = 0
-    public var activeConnections: Int { return _active_connections }
-    
+    public var activeConnections: Int {
+        return MDBManager.connectionQueue.sync { _active_connections }
+    }
+
     public func didConnect( db: MIODB ) {
-        _active_connections += 1
-        if _active_connections == Int.max { _active_connections = 0 }
+        MDBManager.connectionQueue.sync( flags: .barrier ) {
+            _active_connections += 1
+            if _active_connections == Int.max { _active_connections = 0 }
+        }
         Log.debug( "Connected to database \(db.identifier) index: \(db.connectionNumber) schema: \(db.scheme ?? "<nil>")")
     }
-    
+
     public func didDisconnect( db: MIODB ) {
-        _active_connections -= 1
-        if _active_connections == Int.min { _active_connections = 0 }
+        MDBManager.connectionQueue.sync( flags: .barrier ) {
+            _active_connections -= 1
+            if _active_connections == Int.min { _active_connections = 0 }
+        }
         Log.debug( "Disconnected from database \(db.identifier) index: \(db.connectionNumber) schema: \(db.scheme ?? "<nil>")")
     }
     

@@ -18,6 +18,7 @@
 		146A06062F8A4AE400D24EE7 /* MDBManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146A05F62F8A4AE400D24EE7 /* MDBManager.swift */; };
 		146A062E2F8A4CB900D24EE7 /* MIOCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 146A062C2F8A4CB900D24EE7 /* MIOCore.framework */; };
 		146A06302F8A4CB900D24EE7 /* MIOCoreLogger.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 146A062D2F8A4CB900D24EE7 /* MIOCoreLogger.framework */; };
+		147288E62FFDAD6E000FF68C /* MDBResultSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147288E52FFDAD6E000FF68C /* MDBResultSet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +35,7 @@
 		146A06072F8A4AF300D24EE7 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		146A062C2F8A4CB900D24EE7 /* MIOCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		146A062D2F8A4CB900D24EE7 /* MIOCoreLogger.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCoreLogger.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		147288E52FFDAD6E000FF68C /* MDBResultSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MDBResultSet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +72,7 @@
 		146A05FD2F8A4AE400D24EE7 /* MIODB */ = {
 			isa = PBXGroup;
 			children = (
+				147288E52FFDAD6E000FF68C /* MDBResultSet.swift */,
 				146A05F42F8A4AE400D24EE7 /* MDBConnection.swift */,
 				146A05F52F8A4AE400D24EE7 /* MDBError.swift */,
 				146A05F62F8A4AE400D24EE7 /* MDBManager.swift */,
@@ -180,6 +183,7 @@
 				146A06002F8A4AE400D24EE7 /* MDBConnection.swift in Sources */,
 				146A06012F8A4AE400D24EE7 /* MDBQuery.swift in Sources */,
 				146A06022F8A4AE400D24EE7 /* MDBQueryWhere.swift in Sources */,
+				147288E62FFDAD6E000FF68C /* MDBResultSet.swift in Sources */,
 				146A06032F8A4AE400D24EE7 /* MDBError.swift in Sources */,
 				146A06042F8A4AE400D24EE7 /* MDBQueryJoin.swift in Sources */,
 				146A06052F8A4AE400D24EE7 /* MDBQueryValue.swift in Sources */,

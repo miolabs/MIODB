@@ -38,23 +38,27 @@ open class MIODB: MDBConnection
 
     deinit { disconnect() }
     
-    @discardableResult open func fetch ( _ table: String, _ id: String ) throws -> [String : Any]? {
-        let query = try MDBQuery( table ).select().andWhere( "id", .EQ, id )
-        query.delegate = queryDelegate
-        let entity = try execute( query )!
-
-        return entity.first
-    }
+//    @discardableResult open func fetch ( _ table: String, _ id: String ) throws -> [String : Any]? {
+//        let query = try MDBQuery( table ).select().andWhere( "id", .EQ, id )
+//        query.delegate = queryDelegate
+//        let entity = try execute( query )!
+//
+//        return entity.first
+//    }
     
-    @discardableResult open func execute(_ query: MDBQuery ) throws -> [[String : Any]]? {
+    @discardableResult open func execute(_ query: MDBQuery ) throws -> MDBResultSet {
         query.delegate = queryDelegate
-        let result = try executeQueryString( query.rawQuery() )
+        let result = try executeQuery( query.rawQuery() )
         startIdleTimer()
         return result
     }
 
-    @discardableResult open func executeQueryString(_ query:String) throws -> [[String : Any]]? {
-        return []
+    /// Executes a query and returns a lazy result set. Rows keep the raw
+    /// server response and convert each cell to its Swift value only when it
+    /// is accessed, preserving the column order of the query. Backends
+    /// override this; the base implementation returns an empty result.
+    @discardableResult open func executeQuery(_ queryString:String) throws -> MDBResultSet {
+        return MDBResultSet( columns: [], rowCount: 0, affectedRowCount: 0 )
     }
     
     open func queryWillExecute() { stopIdleTimer() }

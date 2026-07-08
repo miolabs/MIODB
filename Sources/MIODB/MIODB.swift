@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import MIOCore
 //import MIOCoreLogger
 
 public protocol MDBDelegate : AnyObject
@@ -58,7 +59,18 @@ open class MIODB: MDBConnection
     /// is accessed, preserving the column order of the query. Backends
     /// override this; the base implementation returns an empty result.
     @discardableResult open func executeQuery(_ queryString:String) throws -> MDBResultSet {
-        return MDBResultSet( columns: [], rowCount: 0, affectedRowCount: 0 )
+        return .empty()
+    }
+
+    /// Legacy API: executes the query and materializes every row into a
+    /// dictionary, converting all the values upfront. Kept as a wrapper over
+    /// `executeQuery` for old installations — new code should use the lazy
+    /// result set instead.
+    @available(*, deprecated, message: "Use executeQuery(_:) and the lazy MDBResultSet instead")
+    @discardableResult open func executeQueryString(_ query:String) throws -> [[String : Any]]? {
+        return try MIOCoreAutoReleasePool {
+            try executeQuery( query ).dictionaries()
+        }
     }
     
     open func queryWillExecute() { stopIdleTimer() }

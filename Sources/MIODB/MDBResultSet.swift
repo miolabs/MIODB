@@ -119,6 +119,12 @@ extension MDBResultSet : RandomAccessCollection
     }
 }
 
+extension MDBResultSet {
+    public static func empty ( ) -> MDBResultSet {
+        return MDBResultSet(columns: [], rowCount: 0, affectedRowCount: 0)
+    }
+}
+
 /// A lightweight view of one row. Nothing is copied or converted until a
 /// column is accessed.
 public struct MDBRow
@@ -184,6 +190,51 @@ public struct MDBRow
     public func uuid ( _ column: String ) -> UUID? { return self[ column ] as? UUID }
     public func decimal ( _ column: String ) -> Decimal? { return self[ column ] as? Decimal }
 
+    // MARK: Throwing, non-optional accessors. Same conversions as above, but
+    // a missing column, a SQL NULL or a failed conversion throw an MDBError
+    // instead of returning nil.
+
+    func index ( of column: String ) throws -> Int {
+        guard let col = resultSet.columnIndex[ column ] else { throw MDBError.columnNotFound( column ) }
+        return col
+    }
+
+    public func intValue ( _ column: String ) throws -> Int {
+        let col = try index( of: column )
+        if resultSet.isNull( row: row, col: col ) { throw MDBError.nullValue( column ) }
+        guard let v = resultSet.intValue( row: row, col: col ) else { throw MDBError.typeMismatch( column, "Int" ) }
+        return v
+    }
+
+    public func stringValue ( _ column: String ) throws -> String {
+        let col = try index( of: column )
+        guard let v = resultSet.rawValue( row: row, col: col ) else { throw MDBError.nullValue( column ) }
+        return v
+    }
+
+    public func boolValue ( _ column: String ) throws -> Bool {
+        let col = try index( of: column )
+        if resultSet.isNull( row: row, col: col ) { throw MDBError.nullValue( column ) }
+        guard let v = resultSet.boolValue( row: row, col: col ) else { throw MDBError.typeMismatch( column, "Bool" ) }
+        return v
+    }
+
+    public func dateValue ( _ column: String ) throws -> Date { return try typedValue( column ) }
+    public func uuidValue ( _ column: String ) throws -> UUID { return try typedValue( column ) }
+    public func decimalValue ( _ column: String ) throws -> Decimal { return try typedValue( column ) }
+
+    /// Converts the cell and casts it to the requested type, throwing on a
+    /// missing column, SQL NULL or conversion mismatch.
+    public func typedValue<T> ( _ column: String ) throws -> T {
+        let col = try index( of: column )
+        let v = try resultSet.value( row: row, col: col )
+        if v == nil || v is NSNull { throw MDBError.nullValue( column ) }
+        guard let t = v as? T else { throw MDBError.typeMismatch( column, String( describing: T.self ) ) }
+        return t
+    }
+
+    // MARK: convert row as key value pairs ( dictionary )
+    
     /// Materializes this row as a dictionary (legacy shape).
     public var dictionary: [String:Any] {
         var item = [String:Any]( minimumCapacity: resultSet.columns.count )
@@ -191,5 +242,12 @@ public struct MDBRow
             if let v = self[ col ] { item[ resultSet.columns[ col ] ] = v }
         }
         return item
+    }
+}
+
+extension MDBRow
+{
+    public static func empty() -> MDBRow {
+        return MDBRow(resultSet: .empty(), row: 0)
     }
 }

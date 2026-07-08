@@ -15,6 +15,9 @@ public enum MDBError: Error
     case cantEndTransactionWhileNotInsideTransaction
     case invalidPoolID( _ poolID: String, functionName: String = #function)
     case createNotImplemented( functionName: String = #function )
+    case columnNotFound( _ column: String )
+    case nullValue( _ column: String )
+    case typeMismatch( _ column: String, _ expectedType: String )
 }
 
 
@@ -31,6 +34,12 @@ extension MDBError: LocalizedError {
                 return "[MDBError] create function not implemented in MDBConnection. Called from \"\(functionName)\"."
         case let .general( message ):
             return "[MDBError] \(message)."
+            case let .columnNotFound( column ):
+                return "[MDBError] Column \"\(column)\" not found in the query result."
+            case let .nullValue( column ):
+                return "[MDBError] Column \"\(column)\" is NULL."
+            case let .typeMismatch( column, expectedType ):
+                return "[MDBError] Column \"\(column)\" can't be converted to \(expectedType)."
         }
     }
 }

@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import MIOCoreLogger
 
 /// Base class for lazy query results. A backend (PostgreSQL, MySQL, ...)
 /// subclasses it, keeps the raw server response alive and overrides the
@@ -138,8 +139,9 @@ public struct MDBRow
     }
 
     /// Dictionary-like access: `NSNull` for SQL NULL, nil when the column
-    /// does not exist. Conversion errors fall back to the raw string; use
-    /// `value(_:)` to receive them as thrown errors.
+    /// does not exist or its value can't be converted. A cell is always its
+    /// native Swift type, never a raw-string stand-in; use `value(_:)` to
+    /// receive conversion errors as thrown errors.
     public subscript ( column: String ) -> Any? {
         guard let col = resultSet.columnIndex[ column ] else { return nil }
         return self[ col ]
@@ -149,7 +151,8 @@ public struct MDBRow
     public subscript ( col: Int ) -> Any? {
         do { return try resultSet.value( row: row, col: col ) }
         catch {
-            return resultSet.rawValue( row: row, col: col )
+            Log.error( "Column \"\(resultSet.columns[ col ])\": \(error.localizedDescription)" )
+            return nil
         }
     }
 

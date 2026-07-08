@@ -18,6 +18,7 @@ public enum MDBError: Error
     case columnNotFound( _ column: String )
     case nullValue( _ column: String )
     case typeMismatch( _ column: String, _ expectedType: String )
+    case conversionFailed( _ expectedType: String, _ rawValue: String )
 }
 
 
@@ -40,6 +41,8 @@ extension MDBError: LocalizedError {
                 return "[MDBError] Column \"\(column)\" is NULL."
             case let .typeMismatch( column, expectedType ):
                 return "[MDBError] Column \"\(column)\" can't be converted to \(expectedType)."
+            case let .conversionFailed( expectedType, rawValue ):
+                return "[MDBError] Value \"\(rawValue)\" can't be converted to \(expectedType)."
         }
     }
 }

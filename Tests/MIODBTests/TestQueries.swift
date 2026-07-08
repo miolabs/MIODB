@@ -42,11 +42,11 @@ class TestDBHelper: XCTestCase
     func testTwoJoin() throws {
         let query = try MDBQuery( "product" ).select( "*" )
                                       .join( table: "ProductModifier", to: "productModifier" )
-                                      .join( table: "ProductCategoryModifier", from: "productModifier", to: "productModifierCategory" )
+                                      .join( table: "ProductCategoryModifier", to: "ProductModifier.productModifierCategory" )
                                       .rawQuery( )
 
         XCTAssertTrue(
-             (query == "SELECT * FROM \"product\" INNER JOIN \"ProductModifier\" ON \"ProductModifier\".\"id\" = \"product\".\"productModifier\" INNER JOIN \"ProductCategoryModifier\" ON \"ProductCategoryModifier\".\"id\" = \"productModifier\".\"productModifierCategory\"" )
+             (query == "SELECT * FROM \"product\" INNER JOIN \"ProductModifier\" ON \"ProductModifier\".\"id\" = \"product\".\"productModifier\" INNER JOIN \"ProductCategoryModifier\" ON \"ProductCategoryModifier\".\"id\" = \"ProductModifier\".\"productModifierCategory\"" )
            , query )
     }
 
@@ -249,7 +249,7 @@ class TestDBHelper: XCTestCase
         let query = try MDBQuery( "product" ).select( ).join(table: "modifier", to: "prod").join(table: "modifier", to: "prod").rawQuery( ) ;
         
         // SELECT * FROM "product" INNER JOIN "modifier" ON "modifier"."id" = "product"."productModifier"
-        XCTAssert( query == "SELECT * FROM \"product\" INNER JOIN \"modifier\" ON \"modifier\".\"id\" = \"prod\"", query )
+        XCTAssert( query == "SELECT * FROM \"product\" INNER JOIN \"modifier\" ON \"modifier\".\"id\" = \"product\".\"prod\"", query )
     }
 
     

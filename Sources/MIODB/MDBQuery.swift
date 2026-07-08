@@ -378,8 +378,11 @@ public class MDBQuery: MDBQueryWhere {
     
     @discardableResult
     public func join ( table: String, from: String? = nil, to: String, joinType: JOIN_TYPE = .INNER, as as_what: String? = nil, _ cb: @escaping ( Join ) throws -> Void = { _ in } ) throws -> MDBQuery {
-        let from_table = MDBValue( fromTable: from != nil ? from! : table + ".id" ).value
-        let to_table   = MDBValue( fromTable: to ).value
+        // Unqualified columns are qualified to keep the ON clause unambiguous:
+        // `from` is a column of the joined table (or its alias), `to` a column of the query's base table
+        let from_col   = from ?? "id"
+        let from_table = MDBValue( fromTable: from_col.contains( "." ) ? from_col : ( as_what ?? table ) + "." + from_col ).value
+        let to_table   = MDBValue( fromTable: to.contains( "." ) ? to : ( _alias ?? self.table ) + "." + to ).value
         let new_join   = Join( joinType: joinType, table: table, fromTable: from_table, toTable: to_table, asWhat: as_what )
                                 
         try cb( new_join )
@@ -464,14 +467,15 @@ public class MDBQuery: MDBQueryWhere {
                                                              ] )
             case .MULTI_UPSERT:
                 let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
-                let classnames = Set(multiValues.map { $0["classname"]!.value } )
+                let classnames = Set( multiValues.compactMap { $0["classname"]?.value } ).sorted()
+                let conflict_filter = classnames.isEmpty ? "" : " WHERE classname in (\(classnames.joined( separator: ",")))"
                 return sorted_values.isEmpty ? ""
 //                      : delegate?.multi_upsert( table: table, keys: sorted_values, values: multiValuesKeyValue( sorted_values ), conflict: on_conflict, returning: _returning ) ??
                       : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
                                       , valuesFieldsRaw( sorted_values )
                                       , "VALUES"
                                       , multiValuesRaw( sorted_values )
-                                      , "ON CONFLICT (" + on_conflict + ") WHERE classname in (\(classnames.joined( separator: ","))) DO UPDATE SET"
+                                      , "ON CONFLICT (" + on_conflict + ")" + conflict_filter + " DO UPDATE SET"
                                       , multiExcludedRaw( sorted_values )
                                       , returningRaw()
                                       ] )
@@ -551,13 +555,9 @@ public class MDBQuery: MDBQueryWhere {
         return key_eq_values.joined(separator: ",")
     }
     
-    // Unfortunatelly dictionaries do not respect the declaration order, so we need to sorted them for testing
+    // Dictionaries do not respect the declaration order, so we sort the keys to make the generated SQL deterministic
     public func sortedValues ( _ v: MDBValues? = nil ) -> [(key:String,value:MDBValue)] {
-        #if testing
-        return ( v == nil ? values : v! ).sorted { (v1,v2) in v1.key < v2.key }
-        #else
-        return (v ?? values).map { (key, value) in (key, value) }
-        #endif
+        return ( v ?? values ).sorted { (v1,v2) in v1.key < v2.key }
     }
     
     public func valuesFieldsRaw( _ sorted_values: [(key:String,value:MDBValue)] ) -> String {

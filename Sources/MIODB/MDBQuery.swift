@@ -47,14 +47,6 @@ struct OrderBy {
     }
 }
 
-public protocol MDBQueryDelegate : AnyObject
-{
-//    func upsert( table: String, values: [(key:String,value:MDBValue)], conflict: String, returning: [String] ) -> String?
-    // func multi_upsert( table: String, keys: [(key:String,value:MDBValue)], values: [[(key:String,value:MDBValue)]], conflict: String, returning: [String] ) -> String?
-    func customRawQuery( query: MDBQuery ) -> String
-    func customValueConvertion(field: String, value: UnsafePointer<Int8>) -> (Bool, Any?)
-}
-
 
 public class MDBQuery: MDBQueryWhere {
 
@@ -74,9 +66,7 @@ public class MDBQuery: MDBQueryWhere {
     public var on_conflict: String = ""
     var distinct_on: [String] = []
     public var _alias: String? = nil
-    
-    public var delegate: MDBQueryDelegate? = nil
-    
+
     public init( _ table: String ) {
         self.table = table
     }
@@ -430,9 +420,6 @@ public class MDBQuery: MDBQueryWhere {
     }
     
     public func rawQuery () -> String {
-        let result = delegate?.customRawQuery( query: self )
-        if result != nil { return result! }
-        
         return defaultRawQuery()
     }
     

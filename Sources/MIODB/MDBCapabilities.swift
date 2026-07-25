@@ -11,10 +11,7 @@ import Foundation
 /// Capability of backends that connect over the network and therefore need
 /// credentials (PostgreSQL, MySQL, Oracle). Embedded backends like SQLite
 /// don't conform: their whole configuration is `database` (the file path).
-///
-/// Stage A of the capability split: the storage still lives in `MDBConnection`
-/// for source compatibility. Stage B moves it into `MDBNetworkConnection` /
-/// `MIONetworkDB` and removes it from the base classes.
+/// Storage lives in `MDBNetworkConnection` / `MIONetworkDB`.
 public protocol MDBCredentials : AnyObject
 {
     var host: String?     { get set }

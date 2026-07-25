@@ -85,7 +85,7 @@ public class MDBManager: MDBDelegate
             _active_connections += 1
             if _active_connections == Int.max { _active_connections = 0 }
         }
-        Log.debug( "Connected to database \(db.identifier) index: \(db.connectionNumber) schema: \(db.scheme ?? "<nil>")")
+        Log.debug( "Connected to database \(db.identifier) index: \(db.connectionNumber) schema: \((db as? MDBSchemes)?.scheme ?? "<nil>")")
     }
 
     public func didDisconnect( db: MIODB ) {
@@ -93,7 +93,7 @@ public class MDBManager: MDBDelegate
             _active_connections -= 1
             if _active_connections == Int.min { _active_connections = 0 }
         }
-        Log.debug( "Disconnected from database \(db.identifier) index: \(db.connectionNumber) schema: \(db.scheme ?? "<nil>")")
+        Log.debug( "Disconnected from database \(db.identifier) index: \(db.connectionNumber) schema: \((db as? MDBSchemes)?.scheme ?? "<nil>")")
     }
     
     let timerQueue = DispatchQueue(label: "idle-pool-timer")

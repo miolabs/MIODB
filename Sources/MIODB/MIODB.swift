@@ -33,8 +33,6 @@ open class MIODB: MDBConnection
     open func disconnect() {
         delegate?.didDisconnect( db: self )
     }
-    
-    open func changeScheme( _ scheme: String? ) throws { self.scheme = scheme }
 
     deinit { disconnect() }
     

@@ -86,8 +86,25 @@ class TestDBHelper: XCTestCase
     
     func testUpdate ( ) throws {
         let query = try MDBQuery( "product" ).update( [ "modifier": 10.5, "str": "Hello" ] ).rawQuery( ) ;
-        
+
         XCTAssert( query == "UPDATE \"product\" SET \"modifier\"=10.5,\"str\"='Hello'", query )
+    }
+
+    func testUpdateInsertNullValues ( ) throws {
+        // nil and NSNull must both render as SQL NULL — NSNull is what the
+        // result sets return for SQL NULL, so a fetched row can be fed back
+        // into an update/insert without any filtering.
+        let update_nsnull = try MDBQuery( "product" ).update( [ "modifier": NSNull() ] ).rawQuery( )
+        XCTAssert( update_nsnull == "UPDATE \"product\" SET \"modifier\"=NULL", update_nsnull )
+
+        let update_nil = try MDBQuery( "product" ).update( [ "modifier": nil ] ).rawQuery( )
+        XCTAssert( update_nil == "UPDATE \"product\" SET \"modifier\"=NULL", update_nil )
+
+        let insert_nsnull = try MDBQuery( "product" ).insert( [ "modifier": NSNull() ] ).rawQuery( )
+        XCTAssert( insert_nsnull == "INSERT INTO \"product\" (\"modifier\") VALUES (NULL)", insert_nsnull )
+
+        let upsert_nsnull = try MDBQuery( "product" ).upsert( [ "modifier": NSNull() ], "id" ).rawQuery( )
+        XCTAssert( upsert_nsnull.contains( "VALUES (NULL)" ), upsert_nsnull )
     }
 
     

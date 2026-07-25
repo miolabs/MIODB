@@ -64,6 +64,11 @@ class TestValueStorage: XCTestCase
         if case .null = try MDBValue.fromValue( nil ).storage { }
         else { XCTFail( "expected .null" ) }
 
+        // NSNull is what MDBResultSet returns for SQL NULL, so a fetched row
+        // must be usable as update/insert values without any filtering.
+        if case .null = try MDBValue.fromValue( NSNull() ).storage { }
+        else { XCTFail( "expected .null for NSNull" ) }
+
         if case .raw( let r ) = MDBValue( raw: "now()" ).storage { XCTAssertEqual( r, "now()" ) }
         else { XCTFail( "expected .raw" ) }
     }

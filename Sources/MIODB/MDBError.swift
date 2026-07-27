@@ -19,6 +19,7 @@ public enum MDBError: Error
     case nullValue( _ column: String )
     case typeMismatch( _ column: String, _ expectedType: String )
     case conversionFailed( _ expectedType: String, _ rawValue: String )
+    case unsupported( _ construct: String, _ backend: String )
 }
 
 
@@ -43,6 +44,8 @@ extension MDBError: LocalizedError {
                 return "[MDBError] Column \"\(column)\" can't be converted to \(expectedType)."
             case let .conversionFailed( expectedType, rawValue ):
                 return "[MDBError] Value \"\(rawValue)\" can't be converted to \(expectedType)."
+            case let .unsupported( construct, backend ):
+                return "[MDBError] \(construct) is not supported by the \(backend) backend."
         }
     }
 }

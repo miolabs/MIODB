@@ -226,9 +226,6 @@ public class MDBQuery: MDBQueryWhere {
         return self ;
     }
     
-    func whereRaw ( ) -> String {
-        return _whereCond != nil ? "WHERE " + _whereCond!.raw( ) : ""
-    }
 
     @discardableResult
     public func addWhereLine( _ where_op: WHERE_OPERATOR, _ field: Any, _ op: WHERE_LINE_OPERATOR, _ value: Any? ) throws -> MDBQuery {
@@ -363,6 +360,11 @@ public class MDBQuery: MDBQueryWhere {
 
     public func offset ( _ value: Int32 ) -> MDBQuery { _offset = value ; return self }
     func offsetRaw ( ) -> String { return _offset > 0 ? "OFFSET " + String( _offset ) : "" }
+
+    /// Read accessors for dialects living outside the module (Oracle needs
+    /// the raw numbers to render OFFSET..FETCH instead of LIMIT/OFFSET).
+    public var limitValue:  Int32 { return _limit  }
+    public var offsetValue: Int32 { return _offset }
     
 
     
@@ -403,9 +405,6 @@ public class MDBQuery: MDBQueryWhere {
     }
 
     
-    func joinRaw ( ) -> String {
-        return joins.map{ $0.raw( ) }.joined( separator: " " )
-    }
 
     public func property_alias ( _ relation_name: String ) -> String {
         let join_already_done = joins.filter{ j in j.table == relation_name }
@@ -419,101 +418,20 @@ public class MDBQuery: MDBQueryWhere {
         return self
     }
     
+    /// Renders the query with the given backend dialect. Throws when the
+    /// query uses a construct the dialect can't express (MDBError.unsupported).
+    public func rawQuery ( dialect: MDBDialect ) throws -> String {
+        return try dialect.render( self )
+    }
+
+    /// Legacy entry point: renders with the default ANSI/PostgreSQL dialect,
+    /// which is guaranteed not to throw.
     public func rawQuery () -> String {
         return defaultRawQuery()
     }
-    
+
     public func defaultRawQuery () -> String {
-        switch queryType {
-            case .UNKOWN:
-                 return ""
-            case .SELECT, .SELECT_FOR_UPDATE:
-                 let for_update = queryType == .SELECT_FOR_UPDATE ? " FOR UPDATE" : ""
-                 return composeQuery( [ "SELECT " + distinctOnRaw( ) + selectFieldsRaw( ) + " FROM " + MDBValue( fromTable: table ).value
-                                      , aliasRaw( )
-                                      , joinRaw( )
-                                      , whereRaw( )
-                                      , groupRaw( )
-                                      , orderRaw( )
-                                      , limitRaw( )
-                                      , offsetRaw( )
-                                      , for_update
-                                      ] )
-                 
-            case .UPSERT:
-                let sorted_values = sortedValues()
-                let t = MDBValue( fromTable: table ).value
-                return sorted_values.isEmpty ? ""
-                                             : composeQuery( [ "INSERT INTO " + t
-                                                             , valuesFieldsRaw( sorted_values )
-                                                             , "VALUES"
-                                                             , valuesValuesRaw( sorted_values )
-                                                             , "ON CONFLICT (" + on_conflict + ") DO UPDATE SET"
-                                                             , valuesRaw()
-                                                             , returningRaw()
-                                                             ] )
-            case .MULTI_UPSERT:
-                let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
-                let classnames = Set( multiValues.compactMap { $0["classname"]?.value } ).sorted()
-                let conflict_filter = classnames.isEmpty ? "" : " WHERE classname in (\(classnames.joined( separator: ",")))"
-                return sorted_values.isEmpty ? ""
-//                      : delegate?.multi_upsert( table: table, keys: sorted_values, values: multiValuesKeyValue( sorted_values ), conflict: on_conflict, returning: _returning ) ??
-                      : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
-                                      , valuesFieldsRaw( sorted_values )
-                                      , "VALUES"
-                                      , multiValuesRaw( sorted_values )
-                                      , "ON CONFLICT (" + on_conflict + ")" + conflict_filter + " DO UPDATE SET"
-                                      , multiExcludedRaw( sorted_values )
-                                      , returningRaw()
-                                      ] )
-
-            case .INSERT:
-                 let sorted_values = sortedValues()
-                 
-                 return sorted_values.isEmpty ? ""
-                      : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
-                                      , valuesFieldsRaw( sorted_values )
-                                      , "VALUES"
-                                      , valuesValuesRaw( sorted_values )
-                                      , whereRaw( )
-                                      , returningRaw()
-                                      ] )
-            case .MULTI_INSERT:
-                 let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
-                 return sorted_values.isEmpty ? ""
-                      : composeQuery( [ "INSERT INTO " + MDBValue( fromTable: table ).value
-                                      , valuesFieldsRaw( sorted_values )
-                                      , "VALUES"
-                                      , multiValuesRaw( sorted_values )
-                                      , whereRaw( )
-                                      , returningRaw()
-                                      ] )
-            case .UPDATE:
-                 return values.isEmpty ? ""
-                      : composeQuery( [ "UPDATE " + MDBValue( fromTable: table ).value + " SET"
-                                      , valuesRaw( )
-                                      , whereRaw( )
-                                      , returningRaw()
-                                      ] )
-            case .MULTI_UPDATE:
-                let sorted_values = sortedValues( multiValues.count > 0 ? multiValues[ 0 ] : [:] )
-
-                return sorted_values.isEmpty ? ""
-                     : composeQuery( [ "UPDATE " + MDBValue( fromTable: table ).value + " SET"
-                                     , multiUpdateValuesRaw( )
-                                     , "FROM (SELECT * FROM (VALUES "
-                                     , multiValuesRaw( sorted_values )
-                                     , ") AS t(\( sorted_values.map{ "\"\($0.key)\"" }.joined(separator: ", ") ))) AS s"
-                                     , whereRaw( )
-                                     , returningRaw()
-                                     ] )
-
-            case .DELETE:
-                 return composeQuery( [ "DELETE FROM " + MDBValue( fromTable: table ).value
-                                      , whereRaw( )
-                                      , returningRaw()
-                                      ] )
-        }
+        return ( try? MDBDialect.ansi.render( self ) ) ?? ""
     }
 
     public func composeQuery ( _ parts: [String?] ) -> String {

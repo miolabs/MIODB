@@ -25,11 +25,22 @@ open class MIODB: MDBConnection
 //    public var isInsideTransaction : Bool = false
 //    var transactionQueryStrings : [String] = []
         
+    /// The SQL dialect queries are rendered with. Backends whose SQL differs
+    /// from the ANSI/PostgreSQL default (SQLite, MySQL, Oracle) override this.
+    open var dialect: MDBDialect { return .ansi }
+
     open func connect( _ to_db: String? = nil ) throws {
 //        try changeScheme( scheme )
+        try sessionSetup()
         delegate?.didConnect( db: self )
     }
-    
+
+    /// Per-backend session configuration, run on every (re)connect once the
+    /// raw connection is established: pragmas (SQLite), statement_timeout
+    /// (PostgreSQL), sql_mode (MySQL), NLS formats (Oracle). Overrides decide
+    /// per statement whether a failure is fatal (throw) or cosmetic (try?).
+    open func sessionSetup ( ) throws { }
+
     open func disconnect() {
         delegate?.didDisconnect( db: self )
     }
@@ -45,7 +56,7 @@ open class MIODB: MDBConnection
 //    }
     
     @discardableResult open func execute(_ query: MDBQuery ) throws -> MDBResultSet {
-        let result = try executeQuery( query.rawQuery() )
+        let result = try executeQuery( query.rawQuery( dialect: dialect ) )
         startIdleTimer()
         return result
     }

@@ -26,12 +26,12 @@ for row in rows {
 
 MIODB itself contains no driver code — each backend is a separate package that subclasses the base classes:
 
-| Package | Database | Kind |
-|---|---|---|
-| [MIODBPostgreSQL](https://github.com/miolabs/MIODBPostgreSQL) | PostgreSQL (libpq) | network |
-| [MIODBMySQL](https://github.com/miolabs/MIODBMySQL) | MySQL (libmysqlclient) | network |
-| [MIODBOracleSQL](https://github.com/miolabs/MIODBOracleSQL) | Oracle (OCI) | network |
-| [MIODBSQLite](https://github.com/miolabs/MIODBSQLite) | SQLite (embedded) | embedded |
+| Package | Database | Kind | Status |
+|---|---|---|---|
+| [MIODBPostgreSQL](https://github.com/miolabs/MIODBPostgreSQL) | PostgreSQL (libpq) | network | 1.0 |
+| [MIODBSQLite](https://github.com/miolabs/MIODBSQLite) | SQLite (embedded) | embedded | 1.0 |
+| [MIODBMySQL](https://github.com/miolabs/MIODBMySQL) | MySQL (libmysqlclient) | network | legacy — predates the 1.0 API, port pending |
+| [MIODBOracleSQL](https://github.com/miolabs/MIODBOracleSQL) | Oracle (OCI) | network | legacy — predates the 1.0 API, port pending |
 
 ## Installation
 

@@ -93,12 +93,23 @@ public class MDBQuery: MDBQueryWhere {
     
     @discardableResult
     public func select ( _ args: Any... ) -> MDBQuery {
+        return select( args )
+    }
+
+    /// The array form, and the one that does the work.
+    ///
+    /// It exists because Swift does not splat an array into a variadic parameter: without
+    /// it, `select_for_update`'s `select( args )` handed the whole `[Any]` to the variadic
+    /// as a *single* element, and `field as! String` then trapped on an array. Every call
+    /// to `select_for_update` with at least one argument crashed the process.
+    @discardableResult
+    public func select ( _ args: [Any] ) -> MDBQuery {
         for field in args {
             let select_field: MDBValue = field is MDBValue ? field as! MDBValue : MDBValue( fromTable: field as! String )
-            
+
             _selectFields.append( select_field.value )
         }
-                
+
         queryType = .SELECT
 
         return self
@@ -106,6 +117,14 @@ public class MDBQuery: MDBQueryWhere {
 
     @discardableResult
     public func select_for_update ( _ args: Any... ) -> MDBQuery {
+        select( args )          // resolves to select( _: [Any] ), not back to this one
+        queryType = .SELECT_FOR_UPDATE
+
+        return self
+    }
+
+    @discardableResult
+    public func select_for_update ( _ args: [Any] ) -> MDBQuery {
         select( args )
         queryType = .SELECT_FOR_UPDATE
 

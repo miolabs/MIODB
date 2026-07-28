@@ -5,3 +5,5 @@
 xcuserdata/
 .swiftpm
 Package.resolved
+# scratch path used to run the suite in a Linux container
+.build-linux/

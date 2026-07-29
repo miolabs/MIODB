@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		145B5F4F3018FCD4000CD96E /* MDBDialect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 145B5F4E3018FCD4000CD96E /* MDBDialect.swift */; };
 		146A05FE2F8A4AE400D24EE7 /* MDBQueryCursor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146A05F82F8A4AE400D24EE7 /* MDBQueryCursor.swift */; };
 		146A05FF2F8A4AE400D24EE7 /* MIODB.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146A05FC2F8A4AE400D24EE7 /* MIODB.swift */; };
 		146A06002F8A4AE400D24EE7 /* MDBConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 146A05F42F8A4AE400D24EE7 /* MDBConnection.swift */; };
@@ -19,13 +20,14 @@
 		146A062E2F8A4CB900D24EE7 /* MIOCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 146A062C2F8A4CB900D24EE7 /* MIOCore.framework */; };
 		146A06302F8A4CB900D24EE7 /* MIOCoreLogger.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 146A062D2F8A4CB900D24EE7 /* MIOCoreLogger.framework */; };
 		147288E62FFDAD6E000FF68C /* MDBResultSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147288E52FFDAD6E000FF68C /* MDBResultSet.swift */; };
-		147288F52FFDBF00000FF68C /* MIONetworkDB.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147288F42FFDBF00000FF68C /* MIONetworkDB.swift */; };
-		147288F32FFDBF00000FF68C /* MDBNetworkConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147288F22FFDBF00000FF68C /* MDBNetworkConnection.swift */; };
 		147288F12FFDBF00000FF68C /* MDBCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147288F02FFDBF00000FF68C /* MDBCapabilities.swift */; };
+		147288F32FFDBF00000FF68C /* MDBNetworkConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147288F22FFDBF00000FF68C /* MDBNetworkConnection.swift */; };
+		147288F52FFDBF00000FF68C /* MIONetworkDB.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147288F42FFDBF00000FF68C /* MIONetworkDB.swift */; };
 		1473EB2D3008CC30007ADC40 /* MDBTimestamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1473EB2C3008CC30007ADC40 /* MDBTimestamp.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		145B5F4E3018FCD4000CD96E /* MDBDialect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MDBDialect.swift; sourceTree = "<group>"; };
 		146A05EA2F8A4A9700D24EE7 /* MIODB.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MIODB.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		146A05F42F8A4AE400D24EE7 /* MDBConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MDBConnection.swift; sourceTree = "<group>"; };
 		146A05F52F8A4AE400D24EE7 /* MDBError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MDBError.swift; sourceTree = "<group>"; };
@@ -40,9 +42,9 @@
 		146A062C2F8A4CB900D24EE7 /* MIOCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		146A062D2F8A4CB900D24EE7 /* MIOCoreLogger.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCoreLogger.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		147288E52FFDAD6E000FF68C /* MDBResultSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MDBResultSet.swift; sourceTree = "<group>"; };
-		147288F42FFDBF00000FF68C /* MIONetworkDB.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIONetworkDB.swift; sourceTree = "<group>"; };
-		147288F22FFDBF00000FF68C /* MDBNetworkConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MDBNetworkConnection.swift; sourceTree = "<group>"; };
 		147288F02FFDBF00000FF68C /* MDBCapabilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MDBCapabilities.swift; sourceTree = "<group>"; };
+		147288F22FFDBF00000FF68C /* MDBNetworkConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MDBNetworkConnection.swift; sourceTree = "<group>"; };
+		147288F42FFDBF00000FF68C /* MIONetworkDB.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIONetworkDB.swift; sourceTree = "<group>"; };
 		1473EB2C3008CC30007ADC40 /* MDBTimestamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MDBTimestamp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -80,6 +82,7 @@
 		146A05FD2F8A4AE400D24EE7 /* MIODB */ = {
 			isa = PBXGroup;
 			children = (
+				145B5F4E3018FCD4000CD96E /* MDBDialect.swift */,
 				1473EB2C3008CC30007ADC40 /* MDBTimestamp.swift */,
 				147288E52FFDAD6E000FF68C /* MDBResultSet.swift */,
 				147288F42FFDBF00000FF68C /* MIONetworkDB.swift */,
@@ -202,6 +205,7 @@
 				1473EB2D3008CC30007ADC40 /* MDBTimestamp.swift in Sources */,
 				146A06032F8A4AE400D24EE7 /* MDBError.swift in Sources */,
 				146A06042F8A4AE400D24EE7 /* MDBQueryJoin.swift in Sources */,
+				145B5F4F3018FCD4000CD96E /* MDBDialect.swift in Sources */,
 				146A06052F8A4AE400D24EE7 /* MDBQueryValue.swift in Sources */,
 				146A06062F8A4AE400D24EE7 /* MDBManager.swift in Sources */,
 			);

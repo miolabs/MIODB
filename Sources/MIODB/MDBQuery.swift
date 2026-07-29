@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import MIOCoreLogger
 
 public enum QUERY_TYPE
 {
@@ -93,19 +94,69 @@ public class MDBQuery: MDBQueryWhere {
     
     @discardableResult
     public func select ( _ args: Any... ) -> MDBQuery {
-        for field in args {
-            let select_field: MDBValue = field is MDBValue ? field as! MDBValue : MDBValue( fromTable: field as! String )
-            
-            _selectFields.append( select_field.value )
-        }
-                
+        return select( args )
+    }
+
+    /// The array form, and the one that does the work.
+    ///
+    /// It exists because Swift does not splat an array into a variadic parameter: without
+    /// it, `select_for_update`'s `select( args )` handed the whole `[Any]` to the variadic
+    /// as a *single* element, and `field as! String` then trapped on an array. Every call
+    /// to `select_for_update` with at least one argument crashed the process.
+    @discardableResult
+    public func select ( _ args: [Any] ) -> MDBQuery {
+        for field in args { append_select_field( field ) }
+
         queryType = .SELECT
 
         return self
     }
 
+    /// Appends one field, or several if what arrived was itself an array.
+    ///
+    /// The array case is not defensive padding, it is load-bearing. Overload resolution
+    /// does **not** send every array to `select( _: [Any] )`: an `[Any]` built explicitly
+    /// binds there, but a `[String]` — much the commoner thing to have in hand — binds to
+    /// the *variadic* overload as a single element, because Swift ranks that above an
+    /// array covariance conversion. Splatting here means an array says "these fields"
+    /// whichever overload won, instead of the meaning depending on the caller's static
+    /// type.
+    ///
+    /// Anything that is neither a column name, an MDBValue, nor an array is a caller bug.
+    /// It used to be met with `field as! String`, which **trapped** — and a trap takes the
+    /// whole process down, where a nonsense column name is merely a query the database
+    /// rejects. So it is logged and stringified: still wrong, but survivably wrong.
+    private func append_select_field ( _ field: Any ) {
+        if let value = field as? MDBValue {
+            _selectFields.append( value.value )
+            return
+        }
+
+        if let name = field as? String {
+            _selectFields.append( MDBValue( fromTable: name ).value )
+            return
+        }
+
+        if let nested = field as? [Any] {
+            for inner in nested { append_select_field( inner ) }
+            return
+        }
+
+        Log.warning( "MDBQuery.select: expected a column name or an MDBValue, got \(type( of: field )) (\(field)). This is a bug in the caller; the query will almost certainly fail." )
+
+        _selectFields.append( MDBValue( fromTable: String( describing: field ) ).value )
+    }
+
     @discardableResult
     public func select_for_update ( _ args: Any... ) -> MDBQuery {
+        select( args )          // resolves to select( _: [Any] ), not back to this one
+        queryType = .SELECT_FOR_UPDATE
+
+        return self
+    }
+
+    @discardableResult
+    public func select_for_update ( _ args: [Any] ) -> MDBQuery {
         select( args )
         queryType = .SELECT_FOR_UPDATE
 

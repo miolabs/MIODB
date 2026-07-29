@@ -65,9 +65,12 @@ class TestSelectForUpdate: XCTestCase
 
     // MARK: - What each argument shape resolves to
     //
-    // The overload pair makes an array argument mean "these fields" rather than "one
-    // field that is an array". That is a deliberate change of meaning and worth pinning
-    // down, because the old behaviour for an array was to trap.
+    // An array argument means "these fields" rather than "one field that is an array".
+    // That is a change of meaning from before, and safe only because the old behaviour for
+    // an array was to trap — an audit of all 150 call sites across MIODB,
+    // DualLinkServerKit and the DL servers found none passing an array. They pass a single
+    // comma-joined String (`entityFields.joined( separator: "," )`), a String expression,
+    // or an MDBValue, all of which are covered below.
 
     func testSingleString ( ) throws {
         XCTAssertEqual( MDBQuery( "t" ).select( "id" ).selectFieldsRaw( ), "\"id\"" )
@@ -77,7 +80,10 @@ class TestSelectForUpdate: XCTestCase
         XCTAssertEqual( MDBQuery( "t" ).select( "id", "name" ).selectFieldsRaw( ), "\"id\",\"name\"" )
     }
 
-    /// A `[String]` coerces to `[Any]`, so it binds to the array overload and splats.
+    /// A `[String]` does **not** bind to the array overload — Swift ranks "pass as one
+    /// `Any`" above an array covariance conversion, so it reaches the variadic as a single
+    /// element. It splats anyway because the splitting happens on the value, not in the
+    /// signature. This is the case that failed before that was true.
     func testStringArraySplatsRatherThanBecomingOneField ( ) throws {
         let fields = [ "id", "name" ]
 
@@ -90,6 +96,16 @@ class TestSelectForUpdate: XCTestCase
         let fields:[Any] = [ "id", "name" ]
 
         XCTAssertEqual( MDBQuery( "t" ).select( fields ).selectFieldsRaw( ), "\"id\",\"name\"" )
+    }
+
+    /// How every multi-field caller in DualLinkServerKit and DLToolServer actually passes
+    /// fields: one String with commas in it, split by MDBValue( fromTable: ). Worth its own
+    /// test because it is the shape the whole codebase relies on.
+    func testCommaJoinedStringSplitsIntoFields ( ) throws {
+        let fields = [ "id", "name", "updated_at" ].joined( separator: "," )
+
+        XCTAssertEqual( MDBQuery( "t" ).select( fields ).selectFieldsRaw( )
+                      , "\"id\",\"name\",\"updated_at\"" )
     }
 
     func testMDBValueElementsPassThrough ( ) throws {

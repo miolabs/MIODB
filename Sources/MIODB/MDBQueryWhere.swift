@@ -21,6 +21,9 @@ public enum WHERE_LINE_OPERATOR: String {
     case IS_NOT = "IS NOT"
     case LIKE = "LIKE"
     case ILIKE = "ILIKE"
+    /// Case- and diacritic-insensitive ILIKE. The raw value is never valid
+    /// SQL — dialects render it (`MDBDialect.whereLine` folds both sides).
+    case ILIKE_DI = "ILIKE_DI"
     case JSON_EXISTS_IN = "?|"
     case RAW = ""
     case BITWISE_AND = "&"

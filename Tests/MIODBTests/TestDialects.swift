@@ -19,10 +19,15 @@ private class TestDialect : MDBDialect
     override func whereOperator ( _ op: WHERE_LINE_OPERATOR ) throws -> String {
         switch op {
         case .ILIKE:          return "LIKE"
+        case .ILIKE_DI:       return "LIKE"
         case .JSON_EXISTS_IN: throw MDBError.unsupported( "?|", "test" )
         default:              return op.rawValue
         }
     }
+
+    // SQLite-style degrade: no unaccent, both sides render untouched.
+    override func foldDiacriticsField ( _ field: String ) throws -> String { return field }
+    override func foldDiacriticsValue ( _ value: String ) throws -> String { return value }
 
     override func renderValue ( _ v: MDBValue ) -> String {
         if case .bool( let b ) = v.storage { return b ? "1" : "0" }
@@ -82,6 +87,17 @@ class TestDialects: XCTestCase
         let u = try MDBQuery( "product" ).update( [ "enabled": false ] )
         XCTAssertEqual( u.rawQuery(), "UPDATE \"product\" SET \"enabled\"=FALSE" )
         XCTAssertEqual( try u.rawQuery( dialect: dialect ), "UPDATE \"product\" SET \"enabled\"=0" )
+    }
+
+    // ILIKE_DI folds both sides with the hardcoded public-schema unaccent
+    // helpers on the default dialect; the column side uses immutable_unaccent
+    // so an expression index on the same call can match.
+    func testDiacriticInsensitiveILike ( ) throws {
+        let q = try MDBQuery( "product" ).select().addWhereLine( .AND, "name", .ILIKE_DI, try MDBValue( "peña", isPartialString: true ) )
+        XCTAssertEqual( try q.rawQuery( dialect: .ansi ),
+                        "SELECT * FROM \"product\" WHERE public.immutable_unaccent(\"name\") ILIKE public.unaccent('%peña%')" )
+        XCTAssertEqual( try q.rawQuery( dialect: dialect ),
+                        "SELECT * FROM \"product\" WHERE \"name\" LIKE '%peña%'" )
     }
 
     // ILIKE mapping happens on the operator, never inside string literals.

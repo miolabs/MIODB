@@ -175,11 +175,31 @@ open class MDBDialect
     // MARK: - WHERE lines
 
     open func whereLine ( _ line: MDBWhereLine, firstLine: Bool ) throws -> String {
-        return ( firstLine ? "" : "\(line.where_op) " ) + line.field + " " + ( try whereOperator( line.op ) ) + " " + renderValue( line.value )
+        let prefix = firstLine ? "" : "\(line.where_op) "
+        if line.op == .ILIKE_DI {
+            return prefix + ( try foldDiacriticsField( line.field ) ) + " " + ( try whereOperator( line.op ) ) + " " + ( try foldDiacriticsValue( renderValue( line.value ) ) )
+        }
+        return prefix + line.field + " " + ( try whereOperator( line.op ) ) + " " + renderValue( line.value )
     }
 
     open func whereOperator ( _ op: WHERE_LINE_OPERATOR ) throws -> String {
-        return op.rawValue
+        return op == .ILIKE_DI ? "ILIKE" : op.rawValue
+    }
+
+    /// Column-side diacritic folding of an ILIKE_DI line. The schema is
+    /// hardcoded so venue databases with a custom search_path fail loudly
+    /// when the extension is missing instead of resolving another function.
+    /// `immutable_unaccent` (created by the backend's setup helper) rather
+    /// than plain `unaccent`, so an expression index on the same call can
+    /// match. Backends without unaccent override to degrade or throw.
+    open func foldDiacriticsField ( _ field: String ) throws -> String {
+        return "public.immutable_unaccent(" + field + ")"
+    }
+
+    /// Value-side folding: the literal is folded once per query, so the
+    /// STABLE `unaccent` is fine here and needs no wrapper function.
+    open func foldDiacriticsValue ( _ value: String ) throws -> String {
+        return "public.unaccent(" + value + ")"
     }
 
     // MARK: - Values

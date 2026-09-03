@@ -150,6 +150,12 @@ public class MDBValue {
     }
 
 
+    /// Builds a value from the storage you pick, instead of guessing it from
+    /// the Swift type the way ``init(_:isPartialString:)`` does.
+    public init( storage: MDBValueStorage ) {
+        self.storage = storage
+    }
+
     public init( fromTable: String ) {
         storage = .raw( fromTable.split( separator: "," )
                                  .map{ MDBValue.checkAS( $0 ) }

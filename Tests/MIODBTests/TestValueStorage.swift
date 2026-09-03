@@ -78,4 +78,16 @@ class TestValueStorage: XCTestCase
         XCTAssertEqual( v.value, "'a''b'" )
         XCTAssertEqual( v.value, "'a''b'", "second access identical" )
     }
+
+    /// `init( storage: )` keeps the case it is handed. The value below is a Double,
+    /// which `fromValue` would store as `.double`, so this fails if the chosen case
+    /// is ever re-derived from the Swift type.
+    func testTheChosenStorageIsKept ( ) throws {
+        let v = MDBValue( storage: .decimal( Decimal( Double( 1.5 ) ) ) )
+
+        if case .decimal = v.storage { }
+        else { XCTFail( "expected .decimal, the case it was handed" ) }
+
+        XCTAssertEqual( v.value, "1.5" )
+    }
 }

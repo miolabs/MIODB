@@ -5,22 +5,44 @@
 //  Created by Javier Segura Perez on 12/07/2026.
 //
 //  SQL timestamp text <-> Date, both directions in one place. The text format
-//  is the ANSI SQL one ("YYYY-MM-DD HH:MM:SS.ffffff", UTC) that PostgreSQL,
+//  is the ANSI SQL one ("YYYY-MM-DD HH:MM:SS.ffffff") that PostgreSQL,
 //  MySQL, SQL Server and SQLite all read and write natively. Both functions
 //  are pure integer math on the proleptic Gregorian calendar (Howard
 //  Hinnant's civil_from_days / days_from_civil) — no formatters, no String
 //  round-trips, thread-safe, and exact inverses of each other.
 //
+//  Time zone contract (the DualLinkDB wall-clock convention):
+//  - Text WITHOUT an offset — a `timestamp` column, which is what every model
+//    date is — is the wall clock, taken in the process time zone as-is: "16:00"
+//    means 16:00 here, and a Date that reads 16:00 here renders as "16:00".
+//    On the GMT pods this is byte-identical to the old UTC behavior.
+//  - Text WITH an offset — a `timestamptz` column — is an absolute instant:
+//    the offset is applied, and the resulting Date shows in whatever the
+//    local time zone is.
+//  The zone is read from `NSTimeZone.default` per call, matching what the
+//  MIOCore wall-clock formatters resolve.
+//
 
 import Foundation
 import MIOCore
 
+/// Converts civil (wall-clock) seconds-since-epoch into the instant that reads
+/// that wall time in the process time zone. The offset is sampled twice so a
+/// value near a DST transition resolves against the adjusted instant.
+@inline(__always)
+func MDBSQLWallToInstant ( _ civil: Double ) -> Date {
+    let tz = NSTimeZone.default
+    var offset = tz.secondsFromGMT( for: Date( timeIntervalSince1970: civil ) )
+    offset = tz.secondsFromGMT( for: Date( timeIntervalSince1970: civil - Double( offset ) ) )
+    return Date( timeIntervalSince1970: civil - Double( offset ) )
+}
+
 /// Parses ISO-datestyle date/timestamp text straight off a C buffer (as
 /// returned by DB client libraries): `YYYY-MM-DD[ HH:MM:SS[.ffffff]][±HH[:MM[:SS]]]`.
 ///
-/// A timestamp without offset is taken as UTC, matching how the servers wire
-/// UTC-stored values. Returns nil for anything else (BC dates, infinity,
-/// non-ISO datestyle) so callers can fall back to a formatter-based path.
+/// A timestamp without offset is the local wall clock; one with an offset is an
+/// absolute instant (see the header). Returns nil for anything else (BC dates,
+/// infinity, non-ISO datestyle) so callers can fall back to a formatter-based path.
 public func MDBSQLParseTimestamp ( _ p: UnsafePointer<Int8> ) -> Date?
 {
     var i = 0
@@ -54,8 +76,8 @@ public func MDBSQLParseTimestamp ( _ p: UnsafePointer<Int8> ) -> Date?
 
     var seconds = Double(days) * 86400.0
 
-    // Date-only column: midnight UTC.
-    if p[i] == 0 { return Date(timeIntervalSince1970: seconds) }
+    // Date-only column: local midnight.
+    if p[i] == 0 { return MDBSQLWallToInstant( seconds ) }
 
     guard p[i] == 32 else { return nil } // ' '
     i += 1
@@ -81,7 +103,9 @@ public func MDBSQLParseTimestamp ( _ p: UnsafePointer<Int8> ) -> Date?
         seconds += frac
     }
 
+    var has_offset = false
     if p[i] == 43 || p[i] == 45 { // '+' / '-'
+        has_offset = true
         let negative = p[i] == 45
         i += 1
         guard let tzh = digits(2) else { return nil }
@@ -102,7 +126,9 @@ public func MDBSQLParseTimestamp ( _ p: UnsafePointer<Int8> ) -> Date?
     // Trailing text (" BC", junk) means this is not a plain ISO value.
     guard p[i] == 0 else { return nil }
 
-    return Date(timeIntervalSince1970: seconds)
+    // With an offset the value is an absolute instant; without one it is
+    // the local wall clock.
+    return has_offset ? Date(timeIntervalSince1970: seconds) : MDBSQLWallToInstant( seconds )
 }
 
 /// Convenience overload for parsing from a Swift String.
@@ -110,11 +136,14 @@ public func MDBSQLParseTimestamp ( _ str: String ) -> Date? {
     return str.withCString { MDBSQLParseTimestamp( $0 ) }
 }
 
-/// Renders a Date as an SQL timestamp literal body: "YYYY-MM-DD HH:MM:SS.ffffff" (UTC).
-/// ~9x faster than ISO8601DateFormatter and keeps microsecond precision, which
-/// the formatter-based path truncated to milliseconds.
+/// Renders a Date as an SQL timestamp literal body: "YYYY-MM-DD HH:MM:SS.ffffff",
+/// the local wall clock with no offset (a Date that reads 16:00 here renders as
+/// "16:00"). ~9x faster than a DateFormatter and keeps microsecond precision,
+/// which the formatter-based path truncated to milliseconds.
 public func MDBSQLTimestampString ( _ date: Date ) -> String {
-    let t = date.timeIntervalSince1970
+    // Shift the epoch value by the local offset so the civil math below yields
+    // the local wall clock. Offsets are whole seconds, so the fraction is intact.
+    let t = date.timeIntervalSince1970 + Double( NSTimeZone.default.secondsFromGMT( for: date ) )
     var secs = Int64( t.rounded( .down ) )
     var micros = Int64( ((t - Double( secs )) * 1_000_000).rounded() )
     if micros >= 1_000_000 { secs += 1 ; micros -= 1_000_000 }

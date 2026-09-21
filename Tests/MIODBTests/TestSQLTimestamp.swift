@@ -105,6 +105,25 @@ final class TestSQLTimestamp: XCTestCase
         }
     }
 
+    /// A wall time inside a spring-forward gap has no instant of its own; it maps
+    /// FORWARD past the gap (like Foundation's Calendar), never to the previous hour —
+    /// and a date-only value whose midnight falls in a gap-at-00:00 zone must stay on
+    /// its own day, not slide to the previous one.
+    func testSpringForwardGapMapsForward () {
+        withTimeZone( "America/Santiago" ) {   // DST start 2026-09-06: 00:00 -> 01:00
+            let d = parse( "2026-09-06" )!
+            XCTAssertTrue( MDBSQLTimestampString( d ).hasPrefix( "2026-09-06 01:00:00" ), MDBSQLTimestampString( d ) )
+        }
+        withTimeZone( "Europe/Madrid" ) {      // DST start 2026-03-29: 02:00 -> 03:00
+            let d = parse( "2026-03-29 02:30:00" )!
+            XCTAssertTrue( MDBSQLTimestampString( d ).hasPrefix( "2026-03-29 03:30:00" ), MDBSQLTimestampString( d ) )
+        }
+        withTimeZone( "America/New_York" ) {   // DST start 2026-03-08: 02:00 -> 03:00
+            let d = parse( "2026-03-08 02:30:00" )!
+            XCTAssertTrue( MDBSQLTimestampString( d ).hasPrefix( "2026-03-08 03:30:00" ), MDBSQLTimestampString( d ) )
+        }
+    }
+
     func testHistoricAndPreEpoch () {
         withTimeZone( "UTC" ) {
             XCTAssertEqual( parse( "1969-12-31 23:59:59" ), iso( "1969-12-31T23:59:59Z" ) )

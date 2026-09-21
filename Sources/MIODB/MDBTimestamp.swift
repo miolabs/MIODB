@@ -22,19 +22,42 @@
 //  The zone is read from `NSTimeZone.default` per call, matching what the
 //  MIOCore wall-clock formatters resolve.
 //
+//  Known limitation — timestamptz WRITES from a non-UTC process:
+//  MDBSQLTimestampString emits no offset, and PostgreSQL reads an offset-less
+//  literal in the SESSION time zone (normally UTC), not the client process
+//  zone, so a Date written to a `timestamptz` column from a non-UTC process
+//  shifts by the local offset. No DualLinkDB model attribute maps to
+//  timestamptz and the pods run UTC, so no production write hits this. If such
+//  writes ever appear, render the literal with an explicit ±HH:MM offset for
+//  the Postgres dialect — Postgres drops it when casting to `timestamp`/`date`
+//  and honors it for `timestamptz`. The same applies to the out-of-range-year
+//  fallback below (< 0000 / > 9999), which stays on the UTC ISO formatter.
+//
 
 import Foundation
 import MIOCore
 
 /// Converts civil (wall-clock) seconds-since-epoch into the instant that reads
 /// that wall time in the process time zone. The offset is sampled twice so a
-/// value near a DST transition resolves against the adjusted instant.
+/// value near a DST transition resolves against the adjusted instant, and a
+/// wall time inside a spring-forward gap — which has no instant of its own,
+/// including MIDNIGHT of a gap-at-00:00 date-only value (America/Santiago,
+/// Atlantic/Azores) — is mapped FORWARD past the gap, the same way Foundation's
+/// Calendar resolves skipped wall times, instead of landing on the previous
+/// hour (or previous day).
 @inline(__always)
 func MDBSQLWallToInstant ( _ civil: Double ) -> Date {
     let tz = NSTimeZone.default
-    var offset = tz.secondsFromGMT( for: Date( timeIntervalSince1970: civil ) )
-    offset = tz.secondsFromGMT( for: Date( timeIntervalSince1970: civil - Double( offset ) ) )
-    return Date( timeIntervalSince1970: civil - Double( offset ) )
+    let offset1 = tz.secondsFromGMT( for: Date( timeIntervalSince1970: civil ) )
+    let offset2 = tz.secondsFromGMT( for: Date( timeIntervalSince1970: civil - Double( offset1 ) ) )
+    let candidate = civil - Double( offset2 )
+    if tz.secondsFromGMT( for: Date( timeIntervalSince1970: candidate ) ) != offset2 {
+        // The candidate's own offset disagrees: `civil` sits in a gap. Subtracting
+        // the PRE-transition offset — the smaller of the two samples, whichever
+        // sample order the zone's sign produced — lands past the gap (forward).
+        return Date( timeIntervalSince1970: civil - Double( min( offset1, offset2 ) ) )
+    }
+    return Date( timeIntervalSince1970: candidate )
 }
 
 /// Parses ISO-datestyle date/timestamp text straight off a C buffer (as

@@ -50,6 +50,7 @@ public enum MDBValueStorage {
     case partialString( String )   // rendered as '%...%' for LIKE
     case uuid( UUID )
     case date( Date )
+    case bytes( Data )             // binary column value; rendered as the engine's bytea literal
     case json( String )            // serialized JSON text, unescaped
     case array( [MDBValue] )       // rendered as (a,b,c) for IN clauses
     case raw( String )             // pre-rendered SQL fragment: fromTable/fromField/raw/custom conversions
@@ -96,6 +97,7 @@ public class MDBValue {
             else if v is Decimal       { return .decimal( v as! Decimal )    }
             else if v is Bool          { return .bool( v as! Bool )          }
             else if v is Date          { return .date( v as! Date )          }
+            else if v is Data          { return .bytes( v as! Data )        }
             else if v is [String:Any]  {
                 guard let data = try? MIOCoreJsonValue( withJSONObject: v as! [String:Any] ) else {
                     throw MDBValueError.couldNotConvert( v! )
@@ -131,12 +133,19 @@ public class MDBValue {
         case .partialString( let s ):  return "'%" + escape_string( s ) + "%'"
         case .uuid( let u ):           return "'"  + u.uuidString.uppercased() + "'"
         case .date( let d ):           return "'"  + MDBSQLTimestampString( d ) + "'"
+        // PostgreSQL bytea from hex. decode() is immune to standard_conforming_strings,
+        // unlike the '\x..' literal. Other engines override MDBDialect.renderValue.
+        case .bytes( let d ):          return "decode('" + MDBValue.hex_string( d ) + "','hex')"
         // JSON text is escaped like any other string literal. Callers must NOT
         // pre-escape — MDBValue is the single place quoting happens.
         case .json( let j ):           return "'"  + escape_string( j ) + "'"
         case .array( let items ):      return "(" + items.map{ $0.value }.joined( separator: "," ) + ")"
         case .raw( let s ):            return s
         }
+    }
+
+    public static func hex_string ( _ data: Data ) -> String {
+        return data.map { String( format: "%02x", $0 ) }.joined()
     }
 
     public static func escape_string ( _ str: String ) -> String {

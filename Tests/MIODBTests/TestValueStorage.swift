@@ -18,6 +18,15 @@ class TestValueStorage: XCTestCase
         try body()
     }
 
+    func testBytesRenderAsPostgreSQLHexDecode ( ) throws {
+        let v = try MDBValue( Data( [ 0x01, 0xAB, 0xFF ] ) )
+        guard case .bytes( let d ) = v.storage else { return XCTFail( "Data must be stored as .bytes, got \(v.storage)" ) }
+        XCTAssertEqual( d, Data( [ 0x01, 0xAB, 0xFF ] ) )
+        XCTAssertEqual( v.value, "decode('01abff','hex')" )
+        XCTAssertEqual( try MDBValue( Data() ).value, "decode('','hex')" )
+        XCTAssertEqual( try MDBValue( [ Data( [ 1 ] ), Data( [ 2 ] ) ] ).value, "(decode('01','hex'),decode('02','hex'))" )
+    }
+
     func testTimestampRender ( ) throws {
         // The renderer emits the wall clock of the process zone: the Calendar
         // reference must agree with it in ANY zone, not just UTC.

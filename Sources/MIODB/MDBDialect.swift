@@ -207,6 +207,11 @@ open class MDBDialect
     /// A single value as an SQL literal. Backends whose literals differ
     /// (Oracle booleans, ...) override this and switch on `v.storage`.
     open func renderValue ( _ v: MDBValue ) -> String {
+        // An IN list renders each item through the dialect too, so a per-item
+        // override (bytes, booleans, ...) holds inside lists as well.
+        if case .array( let items ) = v.storage {
+            return "(" + items.map { renderValue( $0 ) }.joined( separator: "," ) + ")"
+        }
         return v.value
     }
 

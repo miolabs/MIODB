@@ -89,6 +89,14 @@ class TestDialects: XCTestCase
         XCTAssertEqual( try u.rawQuery( dialect: dialect ), "UPDATE \"product\" SET \"enabled\"=0" )
     }
 
+    // A list renders each item through the dialect: the override must reach
+    // inside IN (...) or a per-item literal (bytes, booleans) breaks in lists.
+    func testValueRenderOverrideAppliesInsideLists ( ) throws {
+        let q = try MDBQuery( "product" ).select().andWhere( "enabled", .IN, [ true, false ] )
+        XCTAssertEqual( q.rawQuery(), "SELECT * FROM \"product\" WHERE \"enabled\" IN (TRUE,FALSE)" )
+        XCTAssertEqual( try q.rawQuery( dialect: dialect ), "SELECT * FROM \"product\" WHERE \"enabled\" IN (1,0)" )
+    }
+
     // ILIKE_DI folds both sides with the hardcoded public-schema unaccent
     // helpers on the default dialect; the column side uses immutable_unaccent
     // so an expression index on the same call can match.

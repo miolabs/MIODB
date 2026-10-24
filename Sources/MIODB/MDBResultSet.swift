@@ -68,6 +68,14 @@ open class MDBResultSet
         return ( try? value( row: row, col: col ) ) as? Bool
     }
 
+    /// `value(row:col:)` as a `Sendable` existential, for rows that leave the
+    /// thread that ran the query. Backends whose cell conversion returns
+    /// `any Sendable` override this and let the compiler prove it; the base
+    /// implementation rebuilds the `Any` value through ``MDBSendable``.
+    open func sendableValue ( row: Int, col: Int ) throws -> (any Sendable)? {
+        return try MDBSendable.value( try value( row: row, col: col ) )
+    }
+
     // MARK: - Legacy materialization
 
     /// Converts every cell and returns the rows as dictionaries, like the
@@ -80,6 +88,23 @@ open class MDBResultSet
             var item = [String:Any]( minimumCapacity: columns.count )
             for col in 0..<columns.count {
                 if let v = try value( row: row, col: col ) { item[ columns[ col ] ] = v }
+            }
+            items.append( item )
+        }
+
+        return items
+    }
+
+    /// `dictionaries()` with every value converted to `Sendable`, ready to
+    /// be serialized or handed to another concurrency domain.
+    public func sendableDictionaries ( ) throws -> [[String: any Sendable]] {
+        var items = [[String: any Sendable]]()
+        items.reserveCapacity( rowCount )
+
+        for row in 0..<rowCount {
+            var item = [String: any Sendable]( minimumCapacity: columns.count )
+            for col in 0..<columns.count {
+                if let v = try sendableValue( row: row, col: col ) { item[ columns[ col ] ] = v }
             }
             items.append( item )
         }
@@ -160,6 +185,14 @@ public struct MDBRow
     public func value ( _ column: String ) throws -> Any? {
         guard let col = resultSet.columnIndex[ column ] else { return nil }
         return try resultSet.value( row: row, col: col )
+    }
+
+    /// `value(_:)` as a `Sendable` existential. Propagates conversion
+    /// errors and throws `MDBError.notSendable` for a value that can't cross
+    /// a concurrency boundary.
+    public func sendableValue ( _ column: String ) throws -> (any Sendable)? {
+        guard let col = resultSet.columnIndex[ column ] else { return nil }
+        return try resultSet.sendableValue( row: row, col: col )
     }
 
     public func isNull ( _ column: String ) -> Bool {
@@ -243,6 +276,16 @@ public struct MDBRow
         var item = [String:Any]( minimumCapacity: resultSet.columns.count )
         for col in 0..<resultSet.columns.count {
             if let v = self[ col ] { item[ resultSet.columns[ col ] ] = v }
+        }
+        return item
+    }
+
+    /// `dictionary` with every value converted to `Sendable`. Unlike the
+    /// property, a conversion failure throws instead of dropping the key.
+    public func sendableDictionary ( ) throws -> [String: any Sendable] {
+        var item = [String: any Sendable]( minimumCapacity: resultSet.columns.count )
+        for col in 0..<resultSet.columns.count {
+            if let v = try resultSet.sendableValue( row: row, col: col ) { item[ resultSet.columns[ col ] ] = v }
         }
         return item
     }

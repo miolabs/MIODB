@@ -68,9 +68,11 @@ open class MDBResultSet
         return ( try? value( row: row, col: col ) ) as? Bool
     }
 
-    /// `value(row:col:)` rebuilt as a `Sendable` existential (see
-    /// ``MDBSendable``), for rows that leave the thread that ran the query.
-    public func sendableValue ( row: Int, col: Int ) throws -> (any Sendable)? {
+    /// `value(row:col:)` as a `Sendable` existential, for rows that leave the
+    /// thread that ran the query. Backends whose cell conversion returns
+    /// `any Sendable` override this and let the compiler prove it; the base
+    /// implementation rebuilds the `Any` value through ``MDBSendable``.
+    open func sendableValue ( row: Int, col: Int ) throws -> (any Sendable)? {
         return try MDBSendable.value( try value( row: row, col: col ) )
     }
 

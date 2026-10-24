@@ -8,9 +8,15 @@
 
 import Foundation
 
-/// Converts the `Any` cell values a backend produces into `Sendable`
-/// existentials, so a row can cross a concurrency boundary (network
-/// serialization, actors, task groups) without a `@unchecked` box.
+/// Converts `Any` values into `Sendable` existentials, so a row can cross a
+/// concurrency boundary (network serialization, actors, task groups) without
+/// a `@unchecked` box.
+///
+/// `Sendable` is a marker protocol with no runtime witness, so this can only
+/// recognise types it knows. Backends therefore type their own cell
+/// conversion as `any Sendable` and let the compiler check every return;
+/// they only come here for `JSONSerialization` output, whose static type is
+/// `Any`. The full scalar list serves backends that still convert to `Any`.
 ///
 /// Scalars keep their Swift type (`Bool`, `Int16/32/64`, `Decimal`, `Date`,
 /// `UUID`, `Data`, `String`, `NSNull`). JSON columns are rebuilt

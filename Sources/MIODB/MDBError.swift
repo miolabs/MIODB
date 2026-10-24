@@ -20,6 +20,7 @@ public enum MDBError: Error
     case typeMismatch( _ column: String, _ expectedType: String )
     case conversionFailed( _ expectedType: String, _ rawValue: String )
     case unsupported( _ construct: String, _ backend: String )
+    case notSendable( _ typeName: String )
 }
 
 
@@ -46,6 +47,8 @@ extension MDBError: LocalizedError {
                 return "[MDBError] Value \"\(rawValue)\" can't be converted to \(expectedType)."
             case let .unsupported( construct, backend ):
                 return "[MDBError] \(construct) is not supported by the \(backend) backend."
+            case let .notSendable( typeName ):
+                return "[MDBError] Value of type \(typeName) can't be converted to a Sendable value."
         }
     }
 }
